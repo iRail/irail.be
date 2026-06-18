@@ -25,7 +25,7 @@ const translations = {
     date: "Date",
     search: "Search",
     liveboardTitle: "Station",
-    liveboardLead: "Check departures and station amenities.",
+    liveboardLead: "Check departures for one station.",
     station: "Station",
     stationPlaceholder: "Type station name",
     showDepartures: "Show departures",
@@ -47,9 +47,6 @@ const translations = {
     walkingPart: "Walking part",
     liveboardHeading: "Liveboard station",
     liveboardDescription: "Departing trains and their possible delays.",
-    stationAmenities: "Station amenities",
-    stationAddress: "Address",
-    noStationAmenities: "No station amenities are available in the local station data.",
     composition: "Train composition",
     compositionLead: "Carriage layout and amenities",
     compositionUnavailable: "No train composition is available for this train.",
@@ -103,7 +100,7 @@ const translations = {
     date: "Datum",
     search: "Zoeken",
     liveboardTitle: "Station",
-    liveboardLead: "Bekijk vertrekken en stationsvoorzieningen.",
+    liveboardLead: "Bekijk vertrekken voor een station.",
     station: "Station",
     stationPlaceholder: "Typ station",
     showDepartures: "Toon vertrekken",
@@ -125,9 +122,6 @@ const translations = {
     walkingPart: "Wandelstuk",
     liveboardHeading: "Liveboard station",
     liveboardDescription: "Vertrekkende treinen en mogelijke vertragingen.",
-    stationAmenities: "Stationsvoorzieningen",
-    stationAddress: "Adres",
-    noStationAmenities: "Geen stationsvoorzieningen beschikbaar in de lokale stationsdata.",
     composition: "Treinsamenstelling",
     compositionLead: "Rijtuigen en voorzieningen",
     compositionUnavailable: "Geen treinsamenstelling beschikbaar voor deze trein.",
@@ -181,7 +175,7 @@ const translations = {
     date: "Date",
     search: "Rechercher",
     liveboardTitle: "Gare",
-    liveboardLead: "Consultez les departs et equipements de la gare.",
+    liveboardLead: "Consultez les departs d'une gare.",
     station: "Gare",
     stationPlaceholder: "Tapez une gare",
     showDepartures: "Afficher les departs",
@@ -203,9 +197,6 @@ const translations = {
     walkingPart: "Partie a pied",
     liveboardHeading: "Liveboard gare",
     liveboardDescription: "Trains au depart et retards eventuels.",
-    stationAmenities: "Equipements de gare",
-    stationAddress: "Adresse",
-    noStationAmenities: "Aucun equipement disponible dans les donnees locales des gares.",
     composition: "Composition du train",
     compositionLead: "Voitures et equipements",
     compositionUnavailable: "Aucune composition disponible pour ce train.",
@@ -259,7 +250,7 @@ const translations = {
     date: "Datum",
     search: "Suchen",
     liveboardTitle: "Bahnhof",
-    liveboardLead: "Abfahrten und Bahnhofsausstattung anzeigen.",
+    liveboardLead: "Abfahrten fur einen Bahnhof anzeigen.",
     station: "Bahnhof",
     stationPlaceholder: "Bahnhof eingeben",
     showDepartures: "Abfahrten anzeigen",
@@ -281,9 +272,6 @@ const translations = {
     walkingPart: "Fussweg",
     liveboardHeading: "Liveboard Bahnhof",
     liveboardDescription: "Abfahrende Zuge und mogliche Verspatungen.",
-    stationAmenities: "Bahnhofsausstattung",
-    stationAddress: "Adresse",
-    noStationAmenities: "Keine Bahnhofsausstattung in den lokalen Stationsdaten verfugbar.",
     composition: "Zugzusammenstellung",
     compositionLead: "Wagen und Ausstattung",
     compositionUnavailable: "Keine Zugzusammenstellung fur diesen Zug verfugbar.",
@@ -896,80 +884,11 @@ function renderLiveboard(station, departures) {
     <section class="liveboard-panel">
       <h2 class="section-heading">${escapeHtml(t("liveboardHeading"))} <strong>${escapeHtml(stationDisplayName(station))}</strong></h2>
       <p class="small">${escapeHtml(t("liveboardDescription"))}</p>
-      ${renderStationAmenities(station)}
       <input id="liveboard-filter" class="quick-filter" placeholder="${escapeAttribute(t("quickFilter"))}">
       <div class="list-group" id="liveboard-list"></div>
     </section>
   `;
   renderLiveboardList(departures, "");
-}
-
-function renderStationAmenities(station) {
-  const facilities = station.facilities || {};
-  const address = stationAddress(facilities);
-  const amenities = stationAmenityLabels(facilities);
-
-  if (!address && !amenities.length) {
-    return `
-      <section class="station-amenities">
-        <h3>${escapeHtml(t("stationAmenities"))}</h3>
-        <p class="small">${escapeHtml(t("noStationAmenities"))}</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="station-amenities">
-      <h3>${escapeHtml(t("stationAmenities"))}</h3>
-      ${address ? `<p class="small"><strong>${escapeHtml(t("stationAddress"))}</strong>: ${escapeHtml(address)}</p>` : ""}
-      <div class="amenity-chips">
-        ${amenities.map(label => `<span>${escapeHtml(label)}</span>`).join("")}
-      </div>
-      ${renderSalesHours(facilities)}
-    </section>
-  `;
-}
-
-function stationAmenityLabels(facilities) {
-  const amenityMap = [
-    ["ticket_vending_machine", "Ticket machine"],
-    ["luggage_lockers", "Lockers"],
-    ["free_parking", "Free parking"],
-    ["taxi", "Taxi"],
-    ["bicycle_spots", "Bike parking"],
-    ["blue-bike", "Blue-bike"],
-    ["bus", "Bus"],
-    ["tram", "Tram"],
-    ["metro", "Metro"],
-    ["wheelchair_available", "Wheelchairs"],
-    ["ramp", "Boarding ramp"],
-    ["elevated_platform", "Raised platform"],
-    ["escalator_up", "Escalator up"],
-    ["escalator_down", "Escalator down"],
-    ["elevator_platform", "Platform elevator"],
-    ["audio_induction_loop", "Audio induction loop"],
-  ];
-  const labels = amenityMap.filter(([key]) => isTruthyFlag(facilities[key])).map(([, label]) => label);
-  const disabledParking = numericValue(facilities.disabled_parking_spots);
-  if (disabledParking) {
-    labels.push(`${disabledParking} disabled parking`);
-  }
-  return labels;
-}
-
-function stationAddress(facilities) {
-  return [facilities.street, facilities.zip, facilities.city].filter(Boolean).join(", ");
-}
-
-function renderSalesHours(facilities) {
-  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-  const rows = days.map(day => {
-    const open = facilities[`sales_open_${day}`];
-    const close = facilities[`sales_close_${day}`];
-    return open && close ? `<span>${escapeHtml(day.slice(0, 3))}: ${escapeHtml(open)}-${escapeHtml(close)}</span>` : "";
-  }).filter(Boolean);
-
-  return rows.length ? `<div class="sales-hours">${rows.join("")}</div>` : "";
 }
 
 function renderLiveboardList(departures, filter) {

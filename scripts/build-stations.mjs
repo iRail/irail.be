@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -39,8 +39,9 @@ async function resolveStationsSource() {
 
   for (const candidate of candidates) {
     const source = resolve(appRoot, candidate);
-    if (await hasStationSourceFiles(source)) {
-      return source;
+    const resolved = await findStationSourceDirectory(source);
+    if (resolved) {
+      return resolved;
     }
   }
 
@@ -57,6 +58,33 @@ function optionValue(name) {
   const prefix = `${name}=`;
   const option = process.argv.find(argument => argument.startsWith(prefix));
   return option ? option.slice(prefix.length) : null;
+}
+
+async function findStationSourceDirectory(source, depth = 0) {
+  if (await hasStationSourceFiles(source)) {
+    return source;
+  }
+
+  if (depth >= 4) {
+    return null;
+  }
+
+  try {
+    const entries = await readdir(source, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name === ".git" || entry.name === "node_modules") {
+        continue;
+      }
+      const nested = await findStationSourceDirectory(resolve(source, entry.name), depth + 1);
+      if (nested) {
+        return nested;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 async function hasStationSourceFiles(source) {
@@ -109,8 +137,6 @@ function normalizeRecord(record) {
 function stationPageHtml(station) {
   const name = station.name || stationCode(station);
   const code = stationCode(station);
-  const address = stationAddress(station.facilities || {});
-  const amenities = stationAmenityLabels(station.facilities || {});
   const jsonLd = stationJsonLd(station);
   const jsonLdText = JSON.stringify(jsonLd, null, 2);
 
@@ -143,24 +169,16 @@ function stationPageHtml(station) {
     <section class="view-heading station-subject-heading">
       <p class="eyebrow">NMBS station ${escapeHtml(code)}</p>
       <h1>${escapeHtml(name)}</h1>
-      <p>${escapeHtml(stationDescription(station, address))}</p>
+      <p>${escapeHtml(stationDescription(station))}</p>
     </section>
 
-    <div class="subject-layout">
-      <section class="station-amenities subject-card">
-        <h2 class="section-heading">Station amenities</h2>
-        ${address ? `<p class="small"><strong>Address</strong>: ${escapeHtml(address)}</p>` : ""}
-        ${amenities.length ? `<div class="amenity-chips">${amenities.map(label => `<span>${escapeHtml(label)}</span>`).join("")}</div>` : `<p class="small">No station amenities are available in the station data.</p>`}
-      </section>
-
-      <section class="liveboard-panel subject-card">
-        <h2 class="section-heading">Departures</h2>
-        <p class="small">Live departures from api.irail.be. Updated for <span id="station-liveboard-time">now</span>.</p>
-        <div id="station-departures" class="liveboard-list">
-          <div class="loading"><div class="loader">Loading</div><p class="small">Loading departures</p></div>
-        </div>
-      </section>
-    </div>
+    <section class="liveboard-panel subject-card">
+      <h2 class="section-heading">Departures</h2>
+      <p class="small">Live departures from api.irail.be. Updated for <span id="station-liveboard-time">now</span>.</p>
+      <div id="station-departures" class="liveboard-list">
+        <div class="loading"><div class="loader">Loading</div><p class="small">Loading departures</p></div>
+      </div>
+    </section>
 
     <section class="jsonld-panel subject-card">
       <h2 class="section-heading">JSON-LD description</h2>
@@ -299,8 +317,6 @@ function stationPageHtml(station) {
 }
 
 function stationJsonLd(station) {
-  const facilities = station.facilities || {};
-  const amenities = stationAmenityEntries(facilities);
   const code = stationCode(station);
   const json = {
     "@context": {
@@ -330,26 +346,11 @@ function stationJsonLd(station) {
     json.alternateName = alternatives.map(item => item["@value"]);
   }
 
-  const address = stationAddress(facilities);
-  if (address) {
-    json["schema:address"] = address;
-  }
-
-  if (amenities.length) {
-    json["schema:amenityFeature"] = amenities.map(amenity => ({
-      "@type": ["schema:LocationFeatureSpecification", "irail:StationAmenity"],
-      name: amenity.label,
-      "schema:value": true,
-      "irail:amenityKey": amenity.key,
-    }));
-  }
-
   return json;
 }
 
-function stationDescription(station, address) {
-  const location = address ? ` at ${address}` : "";
-  return `${station.name || "This station"} is an NMBS railway station${location}. This page describes the station data and loads live departures from api.irail.be.`;
+function stationDescription(station) {
+  return `${station.name || "This station"} is an NMBS railway station. This page describes the station and loads live departures from api.irail.be.`;
 }
 
 function stationCode(station) {
@@ -360,50 +361,6 @@ function stationAlternatives(station) {
   return Array.isArray(station.alternative)
     ? station.alternative
     : station.alternative ? [station.alternative] : [];
-}
-
-function stationAddress(facilities) {
-  return [facilities.street, facilities.zip, facilities.city].filter(Boolean).join(", ");
-}
-
-function stationAmenityLabels(facilities) {
-  return stationAmenityEntries(facilities).map(amenity => amenity.label);
-}
-
-function stationAmenityEntries(facilities) {
-  const amenityMap = [
-    ["ticket_vending_machine", "Ticket machine"],
-    ["luggage_lockers", "Lockers"],
-    ["free_parking", "Free parking"],
-    ["taxi", "Taxi"],
-    ["bicycle_spots", "Bike parking"],
-    ["blue-bike", "Blue-bike"],
-    ["bus", "Bus"],
-    ["tram", "Tram"],
-    ["metro", "Metro"],
-    ["wheelchair_available", "Wheelchairs"],
-    ["ramp", "Boarding ramp"],
-    ["elevated_platform", "Raised platform"],
-    ["escalator_up", "Escalator up"],
-    ["escalator_down", "Escalator down"],
-    ["elevator_platform", "Platform elevator"],
-    ["audio_induction_loop", "Audio induction loop"],
-  ];
-  const amenities = amenityMap
-    .filter(([key]) => isTruthyFlag(facilities[key]))
-    .map(([key, label]) => ({ key, label }));
-  const disabledParking = numericValue(facilities.disabled_parking_spots);
-  if (disabledParking) {
-    amenities.push({
-      key: "disabled_parking_spots",
-      label: `${disabledParking} disabled parking`,
-    });
-  }
-  return amenities;
-}
-
-function isTruthyFlag(value) {
-  return value === true || value === 1 || value === "1" || value === "true" || value === "yes";
 }
 
 function numericValue(value) {
