@@ -1,6 +1,5 @@
 const API_BASE = "https://api.irail.be";
 const STATION_ID_PREFIX = "http://irail.be/stations/NMBS/";
-const VEHICLE_PREFIX = "BE.NMBS.";
 const BELGIUM_TIME_ZONE = "Europe/Brussels";
 const LANGUAGE_STORAGE_KEY = "irail-new-language";
 const RECENT_ROUTES_STORAGE_KEY = "irail-new-recent-routes";
@@ -33,6 +32,7 @@ const translations = {
     trainLead: "Follow a train across all stops.",
     train: "Train",
     showTrain: "Show train",
+    menu: "Menu",
     recentRoutes: "Recent routes",
     reverseLast: "Reverse last route",
     earlier: "Earlier",
@@ -108,6 +108,7 @@ const translations = {
     trainLead: "Volg een trein langs alle haltes.",
     train: "Trein",
     showTrain: "Toon trein",
+    menu: "Menu",
     recentRoutes: "Recente routes",
     reverseLast: "Keer vorige route om",
     earlier: "Vroeger",
@@ -183,6 +184,7 @@ const translations = {
     trainLead: "Suivez un train a travers tous ses arrets.",
     train: "Train",
     showTrain: "Afficher le train",
+    menu: "Menu",
     recentRoutes: "Trajets recents",
     reverseLast: "Inverser le dernier trajet",
     earlier: "Plus tot",
@@ -258,6 +260,7 @@ const translations = {
     trainLead: "Folgen Sie einem Zug uber alle Halte.",
     train: "Zug",
     showTrain: "Zug anzeigen",
+    menu: "Menü",
     recentRoutes: "Letzte Routen",
     reverseLast: "Letzte Route umkehren",
     earlier: "Fruher",
@@ -331,6 +334,8 @@ const els = {
   recentRoutes: document.querySelector("#recent-routes"),
   routeAlert: document.querySelector("#route-alert"),
   routeResults: document.querySelector("#route-results"),
+  header: document.querySelector(".site-header"),
+  mobileMenuToggle: document.querySelector("[data-mobile-menu-toggle]"),
   liveboardForm: document.querySelector("#liveboard-form"),
   liveboardStation: document.querySelector("#liveboard-station"),
   liveboardTime: document.querySelector("#liveboard-time"),
@@ -389,6 +394,14 @@ function bindNavigation() {
   els.viewButtons.forEach(button => {
     button.addEventListener("click", () => setView(button.dataset.viewButton));
   });
+
+  if (els.mobileMenuToggle && els.header) {
+    els.mobileMenuToggle.addEventListener("click", () => {
+      const expanded = els.mobileMenuToggle.getAttribute("aria-expanded") === "true";
+      els.mobileMenuToggle.setAttribute("aria-expanded", String(!expanded));
+      els.header.classList.toggle("is-menu-open", !expanded);
+    });
+  }
 }
 
 function bindLanguagePicker() {
@@ -453,6 +466,10 @@ function setView(name, updateUrl = true) {
   els.viewButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.viewButton === name);
   });
+  if (els.header && els.mobileMenuToggle) {
+    els.header.classList.remove("is-menu-open");
+    els.mobileMenuToggle.setAttribute("aria-expanded", "false");
+  }
 
   if (updateUrl) {
     const url = new URL(window.location.href);
@@ -711,6 +728,7 @@ async function searchRoute() {
     state.currentConnections = connections;
     rememberRoute(from, to);
     renderRouteResults(connections);
+    scrollResultsIntoView(els.routeResults);
   } catch (error) {
     showAlert(els.routeAlert, "danger", error.message || t("requestFailed"));
     els.routeResults.innerHTML = "";
@@ -722,6 +740,7 @@ function renderRouteResults(connections) {
 
   if (!connections.length) {
     showAlert(els.routeAlert, "info", t("noRoutes"));
+    scrollResultsIntoView(els.routeAlert);
     return;
   }
 
@@ -810,11 +829,12 @@ function routeViaBlock(via) {
 }
 
 function routeStopRow(stop, station, includeDelay) {
+  const link = stationLinkByName(station);
   return `
     <div class="planner-row">
       <span class="planner-time"><b>${formatEpochTime(stop.time)}</b></span>
       <span class="planner-station">
-        <b>${escapeHtml(station || "")}</b>
+        <b>${link || escapeHtml(station || "")}</b>
         ${includeDelay ? delayLabel(stop.delay, stop.canceled) : ""}
       </span>
       <span class="planner-platform"><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
@@ -873,6 +893,7 @@ async function searchLiveboard() {
     const departures = asArray(data.departures && data.departures.departure);
     window.currentLiveboardDepartures = departures;
     renderLiveboard(station, departures);
+    scrollResultsIntoView(els.liveboardResults);
   } catch (error) {
     showAlert(els.liveboardAlert, "danger", error.message || t("requestFailed"));
     els.liveboardResults.innerHTML = "";
@@ -928,6 +949,7 @@ function renderLiveboardList(departures, filter) {
 
 async function searchTrain() {
   const id = normalizeVehicleId(els.trainId.value);
+  const apiId = vehicleApiId(id);
   const date = toApiDate(els.trainDate.value);
   els.trainAlert.innerHTML = "";
   els.trainResults.innerHTML = "";
@@ -942,7 +964,7 @@ async function searchTrain() {
   updateUrl({ view: "train", train: id, date: els.trainDate.value });
 
   const params = new URLSearchParams({
-    id,
+    id: apiId,
     date,
     format: "json",
     lang: state.locale,
@@ -955,6 +977,7 @@ async function searchTrain() {
       fetchComposition(id),
     ]);
     renderTrain(vehicleData, compositionData);
+    scrollResultsIntoView(els.trainResults);
   } catch (error) {
     showAlert(els.trainAlert, "danger", error.message || t("requestFailed"));
     els.trainResults.innerHTML = "";
@@ -984,6 +1007,7 @@ function renderTrain(data, compositionData = null) {
 
   if (!stops.length) {
     showAlert(els.trainAlert, "info", t("noTrainStops"));
+    scrollResultsIntoView(els.trainAlert);
     return;
   }
 
@@ -1007,13 +1031,15 @@ function renderTrain(data, compositionData = null) {
 
 function trainStopRow(stop, nextStop) {
   const isTrainHere = nextStop && Number(stop.left || 0) === 1 && Number(nextStop.left || 0) === 0;
+  const stationName = escapeHtml(stop.station || "");
+  const station = stationByName(stop.station);
   return `
     <div class="train-row">
       <span>${isTrainHere ? `<img src="./assets/train.svg" alt="Current train position" height="16" width="16">` : ""}</span>
       <span class="text-tabular">${formatEpochTime(stop.time || stop.scheduledDepartureTime)}</span>
       <span>${delayLabel(stop.delay || stop.departureDelay, stop.canceled || stop.departureCanceled)}</span>
       <span><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
-      <span>${escapeHtml(stop.station || "")}</span>
+      <span>${station ? `<a class="train-station-link" href="${escapeAttribute(stationLinkHref(station))}">${stationName}</a>` : stationName}</span>
     </div>
   `;
 }
@@ -1154,20 +1180,27 @@ function normalizeVehicleId(value) {
     return "";
   }
   if (raw.startsWith("http://irail.be/vehicle/")) {
-    return `${VEHICLE_PREFIX}${raw.split("/").pop()}`;
+    return raw.split("/").pop();
   }
-  if (raw.startsWith(VEHICLE_PREFIX)) {
-    return raw;
+  if (raw.startsWith("BE.NMBS.")) {
+    return raw.replace(/^BE\.NMBS\./i, "");
   }
-  return `${VEHICLE_PREFIX}${raw.replace(/^BE\.NMBS\./i, "")}`;
+  return raw;
 }
 
 function compositionVehicleId(value) {
-  return vehicleShortName(value);
+  return vehicleApiId(value);
 }
 
 function vehicleShortName(value) {
-  return (value || "").replace(/^BE\.NMBS\./, "");
+  return String(value || "")
+    .replace(/^BE\.NMBS\./i, "")
+    .replace(/^http:\/\/irail\.be\/vehicle\//i, "");
+}
+
+function vehicleApiId(value) {
+  const short = vehicleShortName(value);
+  return short ? `BE.NMBS.${short}` : "";
 }
 
 async function fetchJson(url) {
@@ -1189,6 +1222,15 @@ function setLoading(container) {
       <p class="small">${escapeHtml(t("loadingSub"))}</p>
     </div>
   `;
+}
+
+function scrollResultsIntoView(target) {
+  if (!target || typeof target.scrollIntoView !== "function") {
+    return;
+  }
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function showAlert(container, type, message) {
@@ -1401,6 +1443,38 @@ function stationByUri(uri) {
   }
   const decoded = decodeURIComponent(uri);
   return state.stations.find(station => station["@id"] === decoded || stationApiId(station) === decoded) || null;
+}
+
+function stationByName(name) {
+  const normalized = normalizeStationText(String(name || "").trim()).toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  return state.stations.find(station => {
+    const names = stationSearchNames(station).map(entry => entry.normalized.toLowerCase());
+    return names.includes(normalized);
+  }) || null;
+}
+
+function stationLinkHref(station) {
+  return `./stations/NMBS/${stationCode(station)}.html`;
+}
+
+function stationLink(station) {
+  if (!station) {
+    return "";
+  }
+  return `<a href="${escapeAttribute(stationLinkHref(station))}">${escapeHtml(stationDisplayName(station))}</a>`;
+}
+
+function stationLinkByName(name) {
+  const station = stationByName(name);
+  return station ? stationLink(station) : "";
+}
+
+function stationCode(station) {
+  return String(station["@id"] || "").replace(STATION_ID_PREFIX, "");
 }
 
 function updateUrl(params) {

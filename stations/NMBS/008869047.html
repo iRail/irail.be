@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#C72929">
+  <link rel="manifest" href="../../site.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="../../assets/logoLarge.svg">
+  <link rel="apple-touch-icon" href="../../assets/logoLarge.svg">
   <title>Athus-Frontiere | iRail station</title>
   <link rel="shortcut icon" href="../../favicon.ico">
   <link rel="stylesheet" href="../../styles.css">
@@ -26,7 +29,7 @@
   "name": "Athus-Frontiere",
   "irail:nmbsStationCode": "008869047",
   "irail:apiIdentifier": "BE.NMBS.008869047",
-  "irail:avgStopTimes": 110.972299,
+  "irail:avgStopTimes": 105.627119,
   "latitude": 49.551749,
   "longitude": 5.824932,
   "schema:url": "https://irail.be/stations/NMBS/008869047.html",
@@ -36,11 +39,16 @@
 <body>
   <header class="site-header">
     <a class="brand" href="../../" aria-label="iRail home">
-      <span class="brand-mark"><img class="brand-logo" src="../../assets/logo.svg" alt=""></span>
+      <img class="brand-logo" src="../../assets/logo.svg" alt="">
       <span>iRail</span>
     </a>
 
-    <nav class="view-nav" aria-label="App sections">
+    <button class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-mobile-menu-toggle>
+      <span class="sr-only">Menu</span>
+      <span aria-hidden="true">☰</span>
+    </button>
+
+    <nav class="view-nav" aria-label="App sections" id="mobile-menu">
       <a class="nav-link-button" href="../../?view=route">Plan route</a>
       <a class="nav-link-button is-active" href="../../?view=liveboard&amp;station=http%3A%2F%2Firail.be%2Fstations%2FNMBS%2F008869047">Station</a>
       <a class="nav-link-button" href="../../?view=train">Train</a>
@@ -83,7 +91,7 @@
   &quot;name&quot;: &quot;Athus-Frontiere&quot;,
   &quot;irail:nmbsStationCode&quot;: &quot;008869047&quot;,
   &quot;irail:apiIdentifier&quot;: &quot;BE.NMBS.008869047&quot;,
-  &quot;irail:avgStopTimes&quot;: 110.972299,
+  &quot;irail:avgStopTimes&quot;: 105.627119,
   &quot;latitude&quot;: 49.551749,
   &quot;longitude&quot;: 5.824932,
   &quot;schema:url&quot;: &quot;https://irail.be/stations/NMBS/008869047.html&quot;,
@@ -93,12 +101,8 @@
   </main>
 
   <footer class="site-footer">
-    <p>
-      <a href="https://hello.irail.be/" target="_blank" rel="noopener">'iRail'</a>
-      - Open Knowledge Belgium. Part of
-      <a href="https://www.openknowledge.be/" target="_blank" rel="noopener">Open Knowledge Belgium</a>.
-    </p>
     <p>&copy; 2026 Open Knowledge Belgium</p>
+    <p><a href="https://api.irail.be">iRail API</a></p>
   </footer>
 
   <script type="module">
@@ -107,6 +111,8 @@
     const stationName = "Athus-Frontiere";
     const departures = document.querySelector("#station-departures");
     const liveboardTime = document.querySelector("#station-liveboard-time");
+    const header = document.querySelector(".site-header");
+    const menuToggle = document.querySelector("[data-mobile-menu-toggle]");
 
     function dateParts(date) {
       const parts = new Intl.DateTimeFormat("en-GB", {
@@ -213,6 +219,14 @@
       } catch (error) {
         departures.innerHTML = `<div class="alert alert-danger">Could not load departures for ${escapeHtml(stationName)}.</div>`;
       }
+    }
+
+    if (menuToggle && header) {
+      menuToggle.addEventListener("click", () => {
+        const expanded = menuToggle.getAttribute("aria-expanded") === "true";
+        menuToggle.setAttribute("aria-expanded", String(!expanded));
+        header.classList.toggle("is-menu-open", !expanded);
+      });
     }
 
     loadDepartures();

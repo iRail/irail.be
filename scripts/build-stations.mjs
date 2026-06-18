@@ -108,6 +108,8 @@ async function writeStationPages(stations) {
     }
     await writeFile(resolve(stationPagesPath, `${code}.html`), stationPageHtml(station));
   }));
+
+  await writeFile(resolve(stationPagesPath, "index.html"), stationIndexPageHtml(stationsDocument));
 }
 
 async function readFacilities(path) {
@@ -146,6 +148,9 @@ function stationPageHtml(station) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#C72929">
+  <link rel="manifest" href="../../site.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="../../assets/logoLarge.svg">
+  <link rel="apple-touch-icon" href="../../assets/logoLarge.svg">
   <title>${escapeHtml(name)} | iRail station</title>
   <link rel="shortcut icon" href="../../favicon.ico">
   <link rel="stylesheet" href="../../styles.css">
@@ -154,11 +159,16 @@ function stationPageHtml(station) {
 <body>
   <header class="site-header">
     <a class="brand" href="../../" aria-label="iRail home">
-      <span class="brand-mark"><img class="brand-logo" src="../../assets/logo.svg" alt=""></span>
+      <img class="brand-logo" src="../../assets/logo.svg" alt="">
       <span>iRail</span>
     </a>
 
-    <nav class="view-nav" aria-label="App sections">
+    <button class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-mobile-menu-toggle>
+      <span class="sr-only">Menu</span>
+      <span aria-hidden="true">☰</span>
+    </button>
+
+    <nav class="view-nav" aria-label="App sections" id="mobile-menu">
       <a class="nav-link-button" href="../../?view=route">Plan route</a>
       <a class="nav-link-button is-active" href="../../?view=liveboard&amp;station=${encodeURIComponent(station["@id"])}">Station</a>
       <a class="nav-link-button" href="../../?view=train">Train</a>
@@ -187,12 +197,8 @@ function stationPageHtml(station) {
   </main>
 
   <footer class="site-footer">
-    <p>
-      <a href="https://hello.irail.be/" target="_blank" rel="noopener">'iRail'</a>
-      - Open Knowledge Belgium. Part of
-      <a href="https://www.openknowledge.be/" target="_blank" rel="noopener">Open Knowledge Belgium</a>.
-    </p>
     <p>&copy; 2026 Open Knowledge Belgium</p>
+    <p><a href="https://api.irail.be">iRail API</a></p>
   </footer>
 
   <script type="module">
@@ -201,6 +207,8 @@ function stationPageHtml(station) {
     const stationName = ${JSON.stringify(name)};
     const departures = document.querySelector("#station-departures");
     const liveboardTime = document.querySelector("#station-liveboard-time");
+    const header = document.querySelector(".site-header");
+    const menuToggle = document.querySelector("[data-mobile-menu-toggle]");
 
     function dateParts(date) {
       const parts = new Intl.DateTimeFormat("en-GB", {
@@ -309,8 +317,46 @@ function stationPageHtml(station) {
       }
     }
 
+    if (menuToggle && header) {
+      menuToggle.addEventListener("click", () => {
+        const expanded = menuToggle.getAttribute("aria-expanded") === "true";
+        menuToggle.setAttribute("aria-expanded", String(!expanded));
+        header.classList.toggle("is-menu-open", !expanded);
+      });
+    }
+
     loadDepartures();
   </script>
+</body>
+</html>
+`;
+}
+
+function stationIndexPageHtml(stationsDocument) {
+  const jsonLdText = JSON.stringify(stationsDocument, null, 2);
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=../../?view=liveboard">
+  <meta name="theme-color" content="#C72929">
+  <link rel="manifest" href="../../site.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="../../assets/logoLarge.svg">
+  <link rel="apple-touch-icon" href="../../assets/logoLarge.svg">
+  <title>Stations | iRail</title>
+  <link rel="shortcut icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../styles.css">
+  <script type="application/ld+json">${escapeScriptJson(jsonLdText)}</script>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="view-heading">
+      <p class="eyebrow">NMBS stations</p>
+      <h1>Stations</h1>
+      <p>This page redirects to the main station view while exposing the station dataset as JSON-LD.</p>
+    </section>
+  </main>
 </body>
 </html>
 `;
