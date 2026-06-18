@@ -1,0 +1,57 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix irail: <https://irail.be/ns/terms#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+irail:Station
+  a rdfs:Class ;
+  rdfs:label "iRail station"@en ;
+  rdfs:comment "A railway station resource as published by iRail."@en ;
+  rdfs:subClassOf schema:TrainStation .
+
+irail:StationAmenity
+  a rdfs:Class ;
+  rdfs:label "Station amenity"@en ;
+  rdfs:comment "A station amenity or facility derived from the iRail stations dataset."@en ;
+  rdfs:subClassOf schema:LocationFeatureSpecification .
+
+irail:nmbsStationCode
+  a rdf:Property ;
+  rdfs:label "NMBS station code"@en ;
+  rdfs:comment "The numeric NMBS station identifier used in iRail station URIs."@en ;
+  rdfs:domain irail:Station ;
+  rdfs:range xsd:string .
+
+irail:apiIdentifier
+  a rdf:Property ;
+  rdfs:label "iRail API identifier"@en ;
+  rdfs:comment "The identifier accepted by api.irail.be for this entity."@en ;
+  rdfs:range xsd:string .
+
+irail:avgStopTimes
+  a rdf:Property ;
+  rdfs:label "average stop times"@en ;
+  rdfs:comment "Station ranking metric inherited from the irail/stations dataset."@en ;
+  rdfs:domain irail:Station ;
+  rdfs:range xsd:decimal .
+
+irail:departuresEndpoint
+  a rdf:Property ;
+  rdfs:label "departures endpoint"@en ;
+  rdfs:comment "An API endpoint that returns live departures for the station."@en ;
+  rdfs:domain irail:Station ;
+  rdfs:range rdfs:Resource .
+
+irail:amenityKey
+  a rdf:Property ;
+  rdfs:label "amenity key"@en ;
+  rdfs:comment "The source field name for a station amenity in the iRail stations dataset."@en ;
+  rdfs:domain irail:StationAmenity ;
+  rdfs:range xsd:string .
+
+<https://irail.be/ns/terms>
+  a schema:DefinedTermSet ;
+  dcterms:title "iRail terms"@en ;
+  dcterms:description "Small vocabulary for iRail frontend subject pages where common vocabularies do not provide sufficiently specific terms."@en .

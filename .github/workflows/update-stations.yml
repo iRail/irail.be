@@ -27,18 +27,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build stations.json
+      - name: Build station data and pages
         run: npm run build:stations -- --source .cache/irail-stations
 
-      - name: Commit updated stations.json
+      - name: Commit updated station artifacts
         run: |
-          if git diff --quiet -- stations.json; then
-            echo "stations.json is already up to date"
+          git add -f stations.json stations/NMBS
+
+          if git diff --cached --quiet -- stations.json stations/NMBS; then
+            echo "Station artifacts are already up to date"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add stations.json
-          git commit -m "Update stations data"
+          git commit -m "Update station data and pages"
           git push

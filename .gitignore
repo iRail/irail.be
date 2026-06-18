@@ -1,0 +1,8 @@
+# Generated station artifacts. The scheduled GitHub Action force-adds these
+# when publishing updates, but local builds should not pollute git status.
+/stations.json
+/stations/NMBS/
+
+# Local checkout used by scripts/build-stations.mjs.
+/.cache/
+/irail-stations/

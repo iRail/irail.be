@@ -122,6 +122,7 @@ img {
 }
 
 .nav-link-button {
+  text-decoration: none;
   padding: .55rem .9rem;
   font-weight: 700;
 }
@@ -641,12 +642,50 @@ img {
 }
 
 .station-amenities,
-.composition-panel {
+.composition-panel,
+.subject-card {
   margin: 1rem 0;
   padding: 1rem;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: #fff;
+}
+
+.station-subject-heading {
+  max-width: 880px;
+}
+
+.eyebrow {
+  margin: 0 0 .4rem;
+  color: var(--accent);
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.subject-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.25fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.jsonld-panel {
+  margin-top: 1rem;
+}
+
+.jsonld-snippet {
+  max-height: 28rem;
+  overflow: auto;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #101418;
+  color: #f7fafc;
+  font-size: .86rem;
+  line-height: 1.45;
 }
 
 .station-amenities h3,
@@ -813,7 +852,9 @@ img {
 
 .liveboard-item {
   width: 100%;
+  color: var(--text);
   text-align: left;
+  text-decoration: none;
 }
 
 .liveboard-time {
@@ -858,9 +899,14 @@ img {
   .station-grid,
   .time-grid,
   .inline-search,
-  .route-results-layout {
+  .route-results-layout,
+  .subject-layout {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .subject-layout {
+    display: flex;
   }
 
   .swap-button {
