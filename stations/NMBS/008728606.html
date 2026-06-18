@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#C72929">
+  <title>Hellemmes | iRail station</title>
+  <link rel="shortcut icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../styles.css">
+  <script id="station-jsonld" type="application/ld+json">{
+  "@context": {
+    "schema": "https://schema.org/",
+    "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "irail": "https://irail.be/ns/terms#",
+    "name": "schema:name",
+    "alternateName": "schema:alternateName",
+    "latitude": "geo:lat",
+    "longitude": "geo:long"
+  },
+  "@id": "http://irail.be/stations/NMBS/008728606",
+  "@type": [
+    "schema:TrainStation",
+    "irail:Station"
+  ],
+  "name": "Hellemmes",
+  "irail:nmbsStationCode": "008728606",
+  "irail:apiIdentifier": "BE.NMBS.008728606",
+  "irail:avgStopTimes": 8.232687,
+  "latitude": 50.626941,
+  "longitude": 3.108892,
+  "schema:url": "https://irail.be/stations/NMBS/008728606.html",
+  "irail:departuresEndpoint": "https://api.irail.be/liveboard/?id=BE.NMBS.008728606"
+}</script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../" aria-label="iRail home">
+      <span class="brand-mark"><img class="brand-logo" src="../../assets/logo.svg" alt=""></span>
+      <span>iRail</span>
+    </a>
+
+    <nav class="view-nav" aria-label="App sections">
+      <a class="nav-link-button" href="../../?view=route">Plan route</a>
+      <a class="nav-link-button is-active" href="../../?view=liveboard&amp;station=http%3A%2F%2Firail.be%2Fstations%2FNMBS%2F008728606">Station</a>
+      <a class="nav-link-button" href="../../?view=train">Train</a>
+    </nav>
+  </header>
+
+  <main class="app-shell station-subject">
+    <section class="view-heading station-subject-heading">
+      <p class="eyebrow">NMBS station 008728606</p>
+      <h1>Hellemmes</h1>
+      <p>Hellemmes is an NMBS railway station. This page describes the station and loads live departures from api.irail.be.</p>
+    </section>
+
+    <section class="liveboard-panel subject-card">
+      <h2 class="section-heading">Departures</h2>
+      <p class="small">Live departures from api.irail.be. Updated for <span id="station-liveboard-time">now</span>.</p>
+      <div id="station-departures" class="liveboard-list">
+        <div class="loading"><div class="loader">Loading</div><p class="small">Loading departures</p></div>
+      </div>
+    </section>
+
+    <section class="jsonld-panel subject-card">
+      <h2 class="section-heading">JSON-LD description</h2>
+      <pre class="jsonld-snippet">{
+  &quot;@context&quot;: {
+    &quot;schema&quot;: &quot;https://schema.org/&quot;,
+    &quot;geo&quot;: &quot;http://www.w3.org/2003/01/geo/wgs84_pos#&quot;,
+    &quot;dcterms&quot;: &quot;http://purl.org/dc/terms/&quot;,
+    &quot;irail&quot;: &quot;https://irail.be/ns/terms#&quot;,
+    &quot;name&quot;: &quot;schema:name&quot;,
+    &quot;alternateName&quot;: &quot;schema:alternateName&quot;,
+    &quot;latitude&quot;: &quot;geo:lat&quot;,
+    &quot;longitude&quot;: &quot;geo:long&quot;
+  },
+  &quot;@id&quot;: &quot;http://irail.be/stations/NMBS/008728606&quot;,
+  &quot;@type&quot;: [
+    &quot;schema:TrainStation&quot;,
+    &quot;irail:Station&quot;
+  ],
+  &quot;name&quot;: &quot;Hellemmes&quot;,
+  &quot;irail:nmbsStationCode&quot;: &quot;008728606&quot;,
+  &quot;irail:apiIdentifier&quot;: &quot;BE.NMBS.008728606&quot;,
+  &quot;irail:avgStopTimes&quot;: 8.232687,
+  &quot;latitude&quot;: 50.626941,
+  &quot;longitude&quot;: 3.108892,
+  &quot;schema:url&quot;: &quot;https://irail.be/stations/NMBS/008728606.html&quot;,
+  &quot;irail:departuresEndpoint&quot;: &quot;https://api.irail.be/liveboard/?id=BE.NMBS.008728606&quot;
+}</pre>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      <a href="https://hello.irail.be/" target="_blank" rel="noopener">'iRail'</a>
+      - Open Knowledge Belgium. Part of
+      <a href="https://www.openknowledge.be/" target="_blank" rel="noopener">Open Knowledge Belgium</a>.
+    </p>
+    <p>&copy; 2026 Open Knowledge Belgium</p>
+  </footer>
+
+  <script type="module">
+    const API_BASE = "https://api.irail.be";
+    const stationCode = "008728606";
+    const stationName = "Hellemmes";
+    const departures = document.querySelector("#station-departures");
+    const liveboardTime = document.querySelector("#station-liveboard-time");
+
+    function dateParts(date) {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Europe/Brussels",
+      }).formatToParts(date);
+      return Object.fromEntries(parts.map(part => [part.type, part.value]));
+    }
+
+    function apiDate(date) {
+      const parts = dateParts(date);
+      return `${parts.day}${parts.month}${parts.year.slice(-2)}`;
+    }
+
+    function apiTime(date) {
+      const parts = dateParts(date);
+      return `${parts.hour}${parts.minute}`;
+    }
+
+    function displayTime(seconds) {
+      const parts = dateParts(new Date(Number(seconds) * 1000));
+      return `${parts.hour}:${parts.minute}`;
+    }
+
+    function delayLabel(delay, canceled) {
+      if (Number(canceled || 0) > 0) {
+        return '<span class="delay">canceled</span>';
+      }
+      const minutes = Math.round(Number(delay || 0) / 60);
+      return minutes > 0 ? `<span class="delay">+${minutes}'</span>` : "";
+    }
+
+    function platformName(platform) {
+      return platform || "?";
+    }
+
+    function asArray(value) {
+      if (!value) {
+        return [];
+      }
+      return Array.isArray(value) ? value : [value];
+    }
+
+    function vehicleShortName(value) {
+      return String(value || "").replace("BE.NMBS.", "").replace("http://irail.be/vehicle/", "");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      }[char]));
+    }
+
+    function renderDepartures(items) {
+      if (!items.length) {
+        departures.innerHTML = '<div class="alert alert-info">No departures found for this station.</div>';
+        return;
+      }
+
+      departures.innerHTML = items.map(departure => {
+        const vehicle = vehicleShortName(departure.vehicle);
+        return `
+          <a class="liveboard-item" href="../../?view=train&amp;train=${encodeURIComponent(vehicle)}">
+            <span class="liveboard-time">
+              <span class="text-tabular">${escapeHtml(displayTime(departure.time))}</span>
+              ${delayLabel(departure.delay, departure.canceled)}
+            </span>
+            <span><strong>${escapeHtml(departure.station || "")}</strong> <span class="small">${escapeHtml(vehicle)}</span></span>
+            <span class="badge">${escapeHtml(platformName(departure.platform))}</span>
+          </a>
+        `;
+      }).join("");
+    }
+
+    async function loadDepartures() {
+      const now = new Date();
+      const params = new URLSearchParams({
+        id: `BE.NMBS.${stationCode}`,
+        date: apiDate(now),
+        time: apiTime(now),
+        arrdep: "departure",
+        lang: "en",
+        format: "json",
+        alerts: "false",
+      });
+      liveboardTime.textContent = `${dateParts(now).hour}:${dateParts(now).minute}`;
+
+      try {
+        const response = await fetch(`${API_BASE}/liveboard/?${params}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        renderDepartures(asArray(data.departures && data.departures.departure));
+      } catch (error) {
+        departures.innerHTML = `<div class="alert alert-danger">Could not load departures for ${escapeHtml(stationName)}.</div>`;
+      }
+    }
+
+    loadDepartures();
+  </script>
+</body>
+</html>
