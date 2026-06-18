@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#C72929">
+  <title>iRail routeplanner</title>
+  <link rel="shortcut icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="iRail home">
+      <span class="brand-mark"><img class="brand-logo" src="./assets/logo.svg" alt=""></span>
+      <span>iRail</span>
+    </a>
+
+    <nav class="view-nav" aria-label="App sections">
+      <button class="nav-link-button is-active" type="button" data-view-button="route" data-i18n="navRoute">Plan route</button>
+      <button class="nav-link-button" type="button" data-view-button="liveboard" data-i18n="navLiveboard">Station</button>
+      <button class="nav-link-button" type="button" data-view-button="train" data-i18n="navTrain">Train</button>
+    </nav>
+
+    <label class="language-picker">
+      <span class="sr-only" data-i18n="language">Language</span>
+      <select id="language-select" aria-label="Language">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="fr">Francais</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </label>
+  </header>
+
+  <main class="app-shell">
+    <section class="app-view" data-view="route" aria-labelledby="route-title">
+      <div class="view-heading">
+        <h1 id="route-title" data-i18n="routeTitle">Find a train</h1>
+        <p data-i18n="routeLead">Plan Belgian train journeys directly with api.irail.be.</p>
+      </div>
+
+      <form id="route-form" class="search-panel" autocomplete="off">
+        <div class="station-grid">
+          <div class="field autocomplete-field">
+            <label for="route-from" data-i18n="from">From</label>
+            <input id="route-from" type="text" data-i18n-placeholder="fromPlaceholder" placeholder="Type departure station" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+            <div class="autocomplete-menu" data-autocomplete-menu="route-from"></div>
+          </div>
+
+          <button class="swap-button" type="button" id="route-swap" data-i18n-title="reverseRoute" title="Reverse route" aria-label="Reverse route">
+            <span aria-hidden="true">&#8644;</span>
+          </button>
+
+          <div class="field autocomplete-field">
+            <label for="route-to" data-i18n="to">To</label>
+            <input id="route-to" type="text" data-i18n-placeholder="toPlaceholder" placeholder="Type destination station" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <div class="autocomplete-menu" data-autocomplete-menu="route-to"></div>
+          </div>
+        </div>
+
+        <div class="time-grid">
+          <div class="segmented" role="radiogroup" aria-label="Departure or arrival time">
+            <label><input type="radio" name="route-timesel" value="departure" checked><span data-i18n="departureAt">Departure</span></label>
+            <label><input type="radio" name="route-timesel" value="arrival"><span data-i18n="arrivalAt">Arrival</span></label>
+          </div>
+
+          <div class="field compact-field">
+            <label for="route-time" data-i18n="time">Time</label>
+            <input id="route-time" type="time" step="60">
+          </div>
+
+          <div class="field compact-field">
+            <label for="route-date" data-i18n="date">Date</label>
+            <input id="route-date" type="date">
+          </div>
+
+          <button class="primary-button" type="submit" data-i18n="search">Search</button>
+        </div>
+      </form>
+
+      <section id="recent-routes" class="recent-routes" aria-live="polite"></section>
+      <div id="route-alert"></div>
+      <div id="route-results"></div>
+    </section>
+
+    <section class="app-view hidden" data-view="liveboard" aria-labelledby="liveboard-title">
+      <div class="view-heading">
+        <h1 id="liveboard-title" data-i18n="liveboardTitle">Station liveboard</h1>
+        <p data-i18n="liveboardLead">Check departures for one station.</p>
+      </div>
+
+      <form id="liveboard-form" class="search-panel inline-search" autocomplete="off">
+        <div class="field autocomplete-field">
+          <label for="liveboard-station" data-i18n="station">Station</label>
+          <input id="liveboard-station" type="text" data-i18n-placeholder="stationPlaceholder" placeholder="Type station name" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="autocomplete-menu" data-autocomplete-menu="liveboard-station"></div>
+        </div>
+
+        <div class="field compact-field">
+          <label for="liveboard-time" data-i18n="time">Time</label>
+          <input id="liveboard-time" type="time" step="60">
+        </div>
+
+        <button class="primary-button" type="submit" data-i18n="showDepartures">Show departures</button>
+      </form>
+
+      <div id="liveboard-alert"></div>
+      <div id="liveboard-results"></div>
+    </section>
+
+    <section class="app-view hidden" data-view="train" aria-labelledby="train-title">
+      <div class="view-heading">
+        <h1 id="train-title" data-i18n="trainTitle">Train overview</h1>
+        <p data-i18n="trainLead">Follow a train across all stops.</p>
+      </div>
+
+      <form id="train-form" class="search-panel inline-search" autocomplete="off">
+        <div class="field">
+          <label for="train-id" data-i18n="train">Train</label>
+          <input id="train-id" type="text" placeholder="IC1832 or BE.NMBS.IC1832" autocorrect="off" autocapitalize="characters" spellcheck="false">
+        </div>
+
+        <div class="field compact-field">
+          <label for="train-date" data-i18n="date">Date</label>
+          <input id="train-date" type="date">
+        </div>
+
+        <button class="primary-button" type="submit" data-i18n="showTrain">Show train</button>
+      </form>
+
+      <div id="train-alert"></div>
+      <div id="train-results"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p></p>
+    <p>&copy; 2026 Open Knowledge Belgium</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

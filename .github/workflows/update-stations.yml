@@ -1,0 +1,44 @@
+name: Update stations data
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-stations:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout app
+        uses: actions/checkout@v4
+
+      - name: Checkout irail/stations
+        uses: actions/checkout@v4
+        with:
+          repository: irail/stations
+          path: .cache/irail-stations
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build stations.json
+        run: npm run build:stations -- --source .cache/irail-stations
+
+      - name: Commit updated stations.json
+        run: |
+          if git diff --quiet -- stations.json; then
+            echo "stations.json is already up to date"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stations.json
+          git commit -m "Update stations data"
+          git push

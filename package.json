@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:stations": "node scripts/build-stations.mjs"
+  }
+}
