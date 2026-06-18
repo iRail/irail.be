@@ -43,12 +43,7 @@
       <span>iRail</span>
     </a>
 
-    <button class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-mobile-menu-toggle>
-      <span class="sr-only">Menu</span>
-      <span aria-hidden="true">☰</span>
-    </button>
-
-    <nav class="view-nav" aria-label="App sections" id="mobile-menu">
+    <nav class="view-nav" aria-label="App sections">
       <a class="nav-link-button" href="../../?view=route">Plan route</a>
       <a class="nav-link-button is-active" href="../../?view=liveboard&amp;station=http%3A%2F%2Firail.be%2Fstations%2FNMBS%2F008778110">Station</a>
       <a class="nav-link-button" href="../../?view=train">Train</a>
@@ -111,8 +106,6 @@
     const stationName = "Narbonne";
     const departures = document.querySelector("#station-departures");
     const liveboardTime = document.querySelector("#station-liveboard-time");
-    const header = document.querySelector(".site-header");
-    const menuToggle = document.querySelector("[data-mobile-menu-toggle]");
 
     function dateParts(date) {
       const parts = new Intl.DateTimeFormat("en-GB", {
@@ -219,14 +212,6 @@
       } catch (error) {
         departures.innerHTML = `<div class="alert alert-danger">Could not load departures for ${escapeHtml(stationName)}.</div>`;
       }
-    }
-
-    if (menuToggle && header) {
-      menuToggle.addEventListener("click", () => {
-        const expanded = menuToggle.getAttribute("aria-expanded") === "true";
-        menuToggle.setAttribute("aria-expanded", String(!expanded));
-        header.classList.toggle("is-menu-open", !expanded);
-      });
     }
 
     loadDepartures();

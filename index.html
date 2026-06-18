@@ -18,12 +18,7 @@
       <span>iRail</span>
     </a>
 
-    <button class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-mobile-menu-toggle>
-      <span class="sr-only" data-i18n="menu">Menu</span>
-      <span aria-hidden="true">☰</span>
-    </button>
-
-    <nav class="view-nav" aria-label="App sections" id="mobile-menu">
+    <nav class="view-nav" aria-label="App sections">
       <button class="nav-link-button is-active" type="button" data-view-button="route" data-i18n="navRoute">Plan route</button>
       <button class="nav-link-button" type="button" data-view-button="liveboard" data-i18n="navLiveboard">Station</button>
       <button class="nav-link-button" type="button" data-view-button="train" data-i18n="navTrain">Train</button>
@@ -87,11 +82,6 @@
     </section>
 
     <section class="app-view hidden" data-view="liveboard" aria-labelledby="liveboard-title">
-      <div class="view-heading">
-        <h1 id="liveboard-title" data-i18n="liveboardTitle">Station liveboard</h1>
-        <p data-i18n="liveboardLead">Check departures for one station.</p>
-      </div>
-
       <form id="liveboard-form" class="search-panel inline-search" autocomplete="off">
         <div class="field autocomplete-field">
           <label for="liveboard-station" data-i18n="station">Station</label>
@@ -112,11 +102,6 @@
     </section>
 
     <section class="app-view hidden" data-view="train" aria-labelledby="train-title">
-      <div class="view-heading">
-        <h1 id="train-title" data-i18n="trainTitle">Train overview</h1>
-        <p data-i18n="trainLead">Follow a train across all stops.</p>
-      </div>
-
       <form id="train-form" class="search-panel inline-search" autocomplete="off">
         <div class="field">
           <label for="train-id" data-i18n="train">Train</label>

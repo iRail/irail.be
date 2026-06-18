@@ -32,7 +32,6 @@ const translations = {
     trainLead: "Follow a train across all stops.",
     train: "Train",
     showTrain: "Show train",
-    menu: "Menu",
     recentRoutes: "Recent routes",
     reverseLast: "Reverse last route",
     earlier: "Earlier",
@@ -108,7 +107,6 @@ const translations = {
     trainLead: "Volg een trein langs alle haltes.",
     train: "Trein",
     showTrain: "Toon trein",
-    menu: "Menu",
     recentRoutes: "Recente routes",
     reverseLast: "Keer vorige route om",
     earlier: "Vroeger",
@@ -184,7 +182,6 @@ const translations = {
     trainLead: "Suivez un train a travers tous ses arrets.",
     train: "Train",
     showTrain: "Afficher le train",
-    menu: "Menu",
     recentRoutes: "Trajets recents",
     reverseLast: "Inverser le dernier trajet",
     earlier: "Plus tot",
@@ -260,7 +257,6 @@ const translations = {
     trainLead: "Folgen Sie einem Zug uber alle Halte.",
     train: "Zug",
     showTrain: "Zug anzeigen",
-    menu: "Menü",
     recentRoutes: "Letzte Routen",
     reverseLast: "Letzte Route umkehren",
     earlier: "Fruher",
@@ -334,8 +330,6 @@ const els = {
   recentRoutes: document.querySelector("#recent-routes"),
   routeAlert: document.querySelector("#route-alert"),
   routeResults: document.querySelector("#route-results"),
-  header: document.querySelector(".site-header"),
-  mobileMenuToggle: document.querySelector("[data-mobile-menu-toggle]"),
   liveboardForm: document.querySelector("#liveboard-form"),
   liveboardStation: document.querySelector("#liveboard-station"),
   liveboardTime: document.querySelector("#liveboard-time"),
@@ -394,14 +388,6 @@ function bindNavigation() {
   els.viewButtons.forEach(button => {
     button.addEventListener("click", () => setView(button.dataset.viewButton));
   });
-
-  if (els.mobileMenuToggle && els.header) {
-    els.mobileMenuToggle.addEventListener("click", () => {
-      const expanded = els.mobileMenuToggle.getAttribute("aria-expanded") === "true";
-      els.mobileMenuToggle.setAttribute("aria-expanded", String(!expanded));
-      els.header.classList.toggle("is-menu-open", !expanded);
-    });
-  }
 }
 
 function bindLanguagePicker() {
@@ -466,10 +452,6 @@ function setView(name, updateUrl = true) {
   els.viewButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.viewButton === name);
   });
-  if (els.header && els.mobileMenuToggle) {
-    els.header.classList.remove("is-menu-open");
-    els.mobileMenuToggle.setAttribute("aria-expanded", "false");
-  }
 
   if (updateUrl) {
     const url = new URL(window.location.href);
@@ -829,12 +811,11 @@ function routeViaBlock(via) {
 }
 
 function routeStopRow(stop, station, includeDelay) {
-  const link = stationLinkByName(station);
   return `
     <div class="planner-row">
       <span class="planner-time"><b>${formatEpochTime(stop.time)}</b></span>
       <span class="planner-station">
-        <b>${link || escapeHtml(station || "")}</b>
+        <b>${escapeHtml(station || "")}</b>
         ${includeDelay ? delayLabel(stop.delay, stop.canceled) : ""}
       </span>
       <span class="planner-platform"><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
@@ -1039,7 +1020,7 @@ function trainStopRow(stop, nextStop) {
       <span class="text-tabular">${formatEpochTime(stop.time || stop.scheduledDepartureTime)}</span>
       <span>${delayLabel(stop.delay || stop.departureDelay, stop.canceled || stop.departureCanceled)}</span>
       <span><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
-      <span>${station ? `<a class="train-station-link" href="${escapeAttribute(stationLinkHref(station))}">${stationName}</a>` : stationName}</span>
+      <span>${stationName}</span>
     </div>
   `;
 }
@@ -1455,22 +1436,6 @@ function stationByName(name) {
     const names = stationSearchNames(station).map(entry => entry.normalized.toLowerCase());
     return names.includes(normalized);
   }) || null;
-}
-
-function stationLinkHref(station) {
-  return `./stations/NMBS/${stationCode(station)}.html`;
-}
-
-function stationLink(station) {
-  if (!station) {
-    return "";
-  }
-  return `<a href="${escapeAttribute(stationLinkHref(station))}">${escapeHtml(stationDisplayName(station))}</a>`;
-}
-
-function stationLinkByName(name) {
-  const station = stationByName(name);
-  return station ? stationLink(station) : "";
 }
 
 function stationCode(station) {

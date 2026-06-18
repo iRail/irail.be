@@ -1,0 +1,21 @@
+{
+  "name": "iRail",
+  "short_name": "iRail",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#c72929",
+  "icons": [
+    {
+      "src": "./assets/logoLarge.svg",
+      "sizes": "271x229",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "./assets/logo.svg",
+      "sizes": "39x30",
+      "type": "image/svg+xml"
+    }
+  ]
+}
