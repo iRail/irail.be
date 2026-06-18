@@ -791,7 +791,7 @@ function routeConnectionPanel(connection, index) {
           </span>
         </span>
         <span class="summary-right">
-          <img src="../images/occupancy-${escapeAttribute(occupancy)}.svg" alt="${escapeAttribute(occupancy)} occupancy" height="18" width="18">
+          <img src="./assets/occupancy-${escapeAttribute(occupancy)}.svg" alt="${escapeAttribute(occupancy)} occupancy" height="18" width="18">
           <span class="badge">${escapeHtml(platformName(departure.platform))}</span>
         </span>
       </button>
@@ -845,7 +845,7 @@ function trainLine(stop) {
     <span class="planner-train">
       ${escapeHtml((stop.direction && stop.direction.name) || "")}
       ${vehicle ? `<span class="small">- <button type="button" data-train-id="${escapeAttribute(vehicle)}" data-train-date="${escapeAttribute(date)}">${escapeHtml(vehicle)}</button></span>` : ""}
-      <img src="../images/occupancy-${escapeAttribute(occupancyName(stop.occupancy))}.svg" alt="" height="16" width="16">
+      <img src="./assets/occupancy-${escapeAttribute(occupancyName(stop.occupancy))}.svg" alt="" height="16" width="16">
     </span>
   `;
 }
@@ -1088,7 +1088,7 @@ function trainStopRow(stop, nextStop) {
   const isTrainHere = nextStop && Number(stop.left || 0) === 1 && Number(nextStop.left || 0) === 0;
   return `
     <div class="train-row">
-      <span>${isTrainHere ? `<img src="../images/train.svg" alt="Current train position" height="16" width="16">` : ""}</span>
+      <span>${isTrainHere ? `<img src="./assets/train.svg" alt="Current train position" height="16" width="16">` : ""}</span>
       <span class="text-tabular">${formatEpochTime(stop.time || stop.scheduledDepartureTime)}</span>
       <span>${delayLabel(stop.delay || stop.departureDelay, stop.canceled || stop.departureCanceled)}</span>
       <span><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
