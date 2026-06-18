@@ -802,7 +802,7 @@ img {
 .liveboard-item,
 .train-row {
   display: grid;
-  grid-template-columns: 4.4rem minmax(0, 1fr) auto auto;
+  grid-template-columns: 6.2rem minmax(0, 1fr) auto;
   gap: .75rem;
   align-items: center;
   padding: .75rem;
@@ -814,6 +814,12 @@ img {
 .liveboard-item {
   width: 100%;
   text-align: left;
+}
+
+.liveboard-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .35rem;
 }
 
 .train-row {
@@ -885,8 +891,7 @@ img {
     grid-template-columns: 4rem minmax(0, 1fr);
   }
 
-  .liveboard-item .badge,
-  .liveboard-item .delay {
+  .liveboard-item .badge {
     justify-self: start;
   }
 

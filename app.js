@@ -380,7 +380,7 @@ async function init() {
   try {
     const data = await fetchJson("./stations.json");
     state.stations = data["@graph"] || [];
-    restoreFromUrl();
+    await restoreFromUrl();
     renderRecentRoutes();
   } catch (error) {
     showAlert(els.routeAlert, "danger", t("requestFailed"));
@@ -992,10 +992,12 @@ function renderLiveboardList(departures, filter) {
     const date = toApiDateFromEpoch(dep.time);
     return `
       <button class="liveboard-item" type="button" data-train-id="${escapeAttribute(vehicle)}" data-train-date="${escapeAttribute(date)}">
-        <span class="text-tabular">${formatEpochTime(dep.time)}</span>
+        <span class="liveboard-time">
+          <span class="text-tabular">${formatEpochTime(dep.time)}</span>
+          ${delayLabel(dep.delay, dep.canceled)}
+        </span>
         <span><strong>${escapeHtml(dep.station || "")}</strong> <span class="small">${escapeHtml(vehicle)}</span></span>
         <span class="badge">${escapeHtml(platformName(dep.platform))}</span>
-        <span>${delayLabel(dep.delay, dep.canceled)}</span>
       </button>
     `;
   }).join("");
@@ -1329,7 +1331,7 @@ function setRouteEdge(edge) {
   searchRoute();
 }
 
-function restoreFromUrl() {
+async function restoreFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view") || "route";
   setView(view, false);
@@ -1365,6 +1367,14 @@ function restoreFromUrl() {
   }
   if (params.get("train")) {
     els.trainId.value = params.get("train");
+  }
+
+  if (view === "liveboard" && station) {
+    await searchLiveboard();
+  } else if (view === "train" && params.get("train")) {
+    await searchTrain();
+  } else if (view === "route" && from && to) {
+    await searchRoute();
   }
 }
 
