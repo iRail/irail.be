@@ -27,6 +27,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install stations deps
+        working-directory: .cache/irail-stations
+        run: npm ci
+
+      - name: Generate stations.jsonld
+        working-directory: .cache/irail-stations
+        run: node ./bin/build.js > stations.jsonld
+
       - name: Build station data and pages
         run: npm run build:stations -- --source .cache/irail-stations
 
