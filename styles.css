@@ -476,6 +476,26 @@ img {
   gap: .6rem;
 }
 
+#route-alert,
+#route-results,
+#liveboard-alert,
+#liveboard-results,
+#train-alert,
+#train-results {
+  scroll-margin-top: 1rem;
+}
+
+@media (min-width: 861px) {
+  #route-alert,
+  #route-results,
+  #liveboard-alert,
+  #liveboard-results,
+  #train-alert,
+  #train-results {
+    scroll-margin-top: 88px;
+  }
+}
+
 .result-card {
   overflow: clip;
 }
