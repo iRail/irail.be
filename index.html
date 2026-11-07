@@ -64,12 +64,12 @@
 
           <div class="field compact-field">
             <label for="route-time" data-i18n="time">Time</label>
-            <input id="route-time" type="time" step="60">
+            <input id="route-time" type="text" data-date-time="time" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" aria-describedby="time-format" required>
           </div>
 
           <div class="field compact-field">
             <label for="route-date" data-i18n="date">Date</label>
-            <input id="route-date" type="date">
+            <input id="route-date" type="text" data-date-time="date" placeholder="DD/MM/YYYY" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" aria-describedby="date-format" required>
           </div>
 
           <button class="primary-button" type="submit" data-i18n="search">Search</button>
@@ -91,7 +91,7 @@
 
         <div class="field compact-field">
           <label for="liveboard-time" data-i18n="time">Time</label>
-          <input id="liveboard-time" type="time" step="60">
+          <input id="liveboard-time" type="text" data-date-time="time" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" aria-describedby="time-format" required>
         </div>
 
         <button class="primary-button" type="submit" data-i18n="showDepartures">Show departures</button>
@@ -110,7 +110,7 @@
 
         <div class="field compact-field">
           <label for="train-date" data-i18n="date">Date</label>
-          <input id="train-date" type="date">
+          <input id="train-date" type="text" data-date-time="date" placeholder="DD/MM/YYYY" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" aria-describedby="date-format" required>
         </div>
 
         <button class="primary-button" type="submit" data-i18n="showTrain">Show train</button>
@@ -120,6 +120,9 @@
       <div id="train-results"></div>
     </section>
   </main>
+
+  <span id="date-format" class="sr-only" data-i18n="dateFormat">Use DD/MM/YYYY, for example 08/11/2026.</span>
+  <span id="time-format" class="sr-only" data-i18n="timeFormat">Use 24-hour time (HH:MM), for example 14:05.</span>
 
   <footer class="site-footer">
     <p>Build your own app with the <a href="https://api.irail.be">iRail API</a></p>

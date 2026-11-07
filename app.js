@@ -1,4 +1,8 @@
+import { dateInputToIso, isoToDateInput, isValidTimeInput } from "./date-time.js";
+
 const API_BASE = "https://api.irail.be";
+const DELAY_FEED_URL = "https://staging.api.irail.be/v1/feed";
+const DELAY_FEED_CACHE_MS = 15_000;
 const STATION_ID_PREFIX = "http://irail.be/stations/NMBS/";
 const BELGIUM_TIME_ZONE = "Europe/Brussels";
 const LANGUAGE_STORAGE_KEY = "irail-new-language";
@@ -22,6 +26,10 @@ const translations = {
     arrivalAt: "Arrival",
     time: "Time",
     date: "Date",
+    dateFormat: "Use DD/MM/YYYY, for example 08/11/2026.",
+    timeFormat: "Use 24-hour time (HH:MM), for example 14:05.",
+    chooseDate: "Choose date",
+    chooseTime: "Choose time",
     search: "Search",
     liveboardTitle: "Station",
     liveboardLead: "Check departures for one station.",
@@ -80,6 +88,14 @@ const translations = {
     delay: "Delay",
     platform: "Platform",
     canceled: "canceled",
+    delayHistory: "Delay history",
+    delayHistoryLoading: "Loading delay history...",
+    delayHistoryUnavailable: "No delay history is available for this departure in the latest hour.",
+    delayHistoryFailed: "Delay history could not be loaded.",
+    delayTrendUp: "up {minutes} min",
+    delayTrendDown: "down {minutes} min",
+    delayTrendStable: "unchanged",
+    delayHistorySummary: "Announced delay over the latest hour: {trend}. From {start} to {end} minutes.",
   },
   nl: {
     navRoute: "Route plannen",
@@ -97,6 +113,10 @@ const translations = {
     arrivalAt: "Aankomst",
     time: "Tijd",
     date: "Datum",
+    dateFormat: "Gebruik DD/MM/JJJJ, bijvoorbeeld 08/11/2026.",
+    timeFormat: "Gebruik het 24-uursformaat (UU:MM), bijvoorbeeld 14:05.",
+    chooseDate: "Datum kiezen",
+    chooseTime: "Tijd kiezen",
     search: "Zoeken",
     liveboardTitle: "Station",
     liveboardLead: "Bekijk vertrekken voor een station.",
@@ -155,6 +175,14 @@ const translations = {
     delay: "Vertraging",
     platform: "Spoor",
     canceled: "afgeschaft",
+    delayHistory: "Vertragingsverloop",
+    delayHistoryLoading: "Vertragingsverloop laden...",
+    delayHistoryUnavailable: "Voor dit vertrek is er geen vertragingsverloop van het laatste uur beschikbaar.",
+    delayHistoryFailed: "Het vertragingsverloop kon niet worden geladen.",
+    delayTrendUp: "{minutes} min gestegen",
+    delayTrendDown: "{minutes} min gedaald",
+    delayTrendStable: "ongewijzigd",
+    delayHistorySummary: "Aangekondigde vertraging tijdens het laatste uur: {trend}. Van {start} naar {end} minuten.",
   },
   fr: {
     navRoute: "Planifier",
@@ -172,6 +200,10 @@ const translations = {
     arrivalAt: "Arrivee",
     time: "Heure",
     date: "Date",
+    dateFormat: "Utilisez JJ/MM/AAAA, par exemple 08/11/2026.",
+    timeFormat: "Utilisez le format 24 heures (HH:MM), par exemple 14:05.",
+    chooseDate: "Choisir une date",
+    chooseTime: "Choisir une heure",
     search: "Rechercher",
     liveboardTitle: "Gare",
     liveboardLead: "Consultez les departs d'une gare.",
@@ -230,6 +262,14 @@ const translations = {
     delay: "Retard",
     platform: "Quai",
     canceled: "supprime",
+    delayHistory: "Evolution du retard",
+    delayHistoryLoading: "Chargement de l'evolution du retard...",
+    delayHistoryUnavailable: "Aucun historique de retard n'est disponible pour ce depart durant la derniere heure.",
+    delayHistoryFailed: "L'historique du retard n'a pas pu etre charge.",
+    delayTrendUp: "hausse de {minutes} min",
+    delayTrendDown: "baisse de {minutes} min",
+    delayTrendStable: "inchange",
+    delayHistorySummary: "Retard annonce durant la derniere heure : {trend}. De {start} a {end} minutes.",
   },
   de: {
     navRoute: "Route planen",
@@ -247,6 +287,10 @@ const translations = {
     arrivalAt: "Ankunft",
     time: "Zeit",
     date: "Datum",
+    dateFormat: "Verwenden Sie TT/MM/JJJJ, zum Beispiel 08/11/2026.",
+    timeFormat: "Verwenden Sie das 24-Stunden-Format (HH:MM), zum Beispiel 14:05.",
+    chooseDate: "Datum auswählen",
+    chooseTime: "Uhrzeit auswählen",
     search: "Suchen",
     liveboardTitle: "Bahnhof",
     liveboardLead: "Abfahrten fur einen Bahnhof anzeigen.",
@@ -305,6 +349,14 @@ const translations = {
     delay: "Verspatung",
     platform: "Gleis",
     canceled: "ausfall",
+    delayHistory: "Verspatungsverlauf",
+    delayHistoryLoading: "Verspatungsverlauf wird geladen...",
+    delayHistoryUnavailable: "Fur diese Abfahrt ist kein Verspatungsverlauf der letzten Stunde verfugbar.",
+    delayHistoryFailed: "Der Verspatungsverlauf konnte nicht geladen werden.",
+    delayTrendUp: "um {minutes} Min. gestiegen",
+    delayTrendDown: "um {minutes} Min. gesunken",
+    delayTrendStable: "unverandert",
+    delayHistorySummary: "Angekundigte Verspatung in der letzten Stunde: {trend}. Von {start} auf {end} Minuten.",
   },
 };
 
@@ -316,6 +368,9 @@ const state = {
   locale: resolveInitialLocale(),
   recentRoutes: [],
   currentConnections: [],
+  delayFeed: null,
+  delayFeedFetchedAt: 0,
+  delayFeedPromise: null,
 };
 
 const els = {
@@ -349,11 +404,13 @@ async function init() {
   state.recentRoutes = loadRecentRoutes();
   document.documentElement.lang = state.locale;
   els.languageSelect.value = state.locale;
+  bindDateTimeInputs();
   setDefaultDateTimes();
   applyTranslations();
   bindNavigation();
   bindForms();
   bindLanguagePicker();
+  bindDelayHistory();
   bindStationAutocomplete(els.routeFrom, "route-from", station => {
     state.routeFrom = station;
   });
@@ -378,10 +435,72 @@ function setDefaultDateTimes() {
   const now = new Date();
   const localDate = toDateInputValue(now);
   const localTime = toTimeInputValue(now);
-  els.routeDate.value = localDate;
+  setDateInputValue(els.routeDate, localDate);
   els.routeTime.value = localTime;
   els.liveboardTime.value = localTime;
-  els.trainDate.value = localDate;
+  setDateInputValue(els.trainDate, localDate);
+}
+
+function setDateInputValue(input, isoDate) {
+  input.value = isoToDateInput(isoDate);
+  input.setCustomValidity("");
+}
+
+function validateDateTimeInput(input) {
+  const isDate = input.dataset.dateTime === "date";
+  const valid = isDate ? Boolean(dateInputToIso(input.value)) : isValidTimeInput(input.value);
+  input.setCustomValidity(input.value && !valid ? t(isDate ? "dateFormat" : "timeFormat") : "");
+}
+
+function bindDateTimeInputs() {
+  document.querySelectorAll("[data-date-time]").forEach(input => {
+    input.addEventListener("input", () => validateDateTimeInput(input));
+
+    // Native controls can ignore the page language. Use text for the displayed
+    // value, and keep the browser's picker as an optional input method.
+    const picker = document.createElement("input");
+    picker.type = input.dataset.dateTime;
+    if (picker.type !== input.dataset.dateTime || typeof picker.showPicker !== "function") {
+      return;
+    }
+    picker.className = "date-time-native-picker";
+    picker.tabIndex = -1;
+    picker.setAttribute("aria-hidden", "true");
+    if (picker.type === "time") {
+      picker.step = "60";
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "date-time-picker-button";
+    button.dataset.i18nTitle = picker.type === "date" ? "chooseDate" : "chooseTime";
+    button.innerHTML = picker.type === "date"
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    button.addEventListener("click", () => {
+      picker.value = picker.type === "date" ? dateInputToIso(input.value) : input.value;
+      try {
+        picker.showPicker();
+      } catch {
+        input.focus();
+      }
+    });
+    picker.addEventListener("change", () => {
+      if (picker.type === "date") {
+        setDateInputValue(input, picker.value);
+      } else {
+        input.value = picker.value;
+      }
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.focus();
+    });
+
+    const control = document.createElement("div");
+    control.className = "date-time-control";
+    input.replaceWith(control);
+    control.append(input, button, picker);
+  });
 }
 
 function bindNavigation() {
@@ -441,10 +560,18 @@ function applyTranslations() {
     node.title = t(node.dataset.i18nTitle);
     node.setAttribute("aria-label", t(node.dataset.i18nTitle));
   });
+  document.querySelectorAll("[data-date-time]").forEach(validateDateTimeInput);
 }
 
 function t(key) {
   return (translations[state.locale] && translations[state.locale][key]) || translations.en[key] || key;
+}
+
+function formatTranslation(key, values) {
+  return Object.entries(values).reduce(
+    (label, [name, value]) => label.replaceAll(`{${name}}`, String(value)),
+    t(key),
+  );
 }
 
 function setView(name, updateUrl = true) {
@@ -664,6 +791,10 @@ function normalizeStationText(value) {
 }
 
 async function searchRoute() {
+  els.routeForm.querySelectorAll("[data-date-time]").forEach(validateDateTimeInput);
+  if (!els.routeForm.reportValidity()) {
+    return;
+  }
   const from = state.routeFrom || stationFromInput(els.routeFrom.value);
   const to = state.routeTo || stationFromInput(els.routeTo.value);
 
@@ -687,7 +818,7 @@ async function searchRoute() {
   const params = new URLSearchParams({
     from: stationApiId(from),
     to: stationApiId(to),
-    date: toApiDate(els.routeDate.value),
+    date: toApiDate(dateInputToIso(els.routeDate.value)),
     time: toApiTime(els.routeTime.value),
     timesel,
     format: "json",
@@ -699,7 +830,7 @@ async function searchRoute() {
     view: "route",
     from: from["@id"],
     to: to["@id"],
-    date: els.routeDate.value,
+    date: dateInputToIso(els.routeDate.value),
     time: els.routeTime.value,
     timesel,
   });
@@ -816,7 +947,7 @@ function routeStopRow(stop, station, includeDelay) {
       <span class="planner-time"><b>${formatEpochTime(stop.time)}</b></span>
       <span class="planner-station">
         <b>${escapeHtml(station || "")}</b>
-        ${includeDelay ? delayLabel(stop.delay, stop.canceled) : ""}
+        ${includeDelay ? delayLabel(stop.delay, stop.canceled, stop.departureConnection) : ""}
       </span>
       <span class="planner-platform"><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
     </div>
@@ -840,6 +971,10 @@ function trainLine(stop) {
 }
 
 async function searchLiveboard() {
+  els.liveboardForm.querySelectorAll("[data-date-time]").forEach(validateDateTimeInput);
+  if (!els.liveboardForm.reportValidity()) {
+    return;
+  }
   const station = state.liveboardStation || stationFromInput(els.liveboardStation.value);
   els.liveboardAlert.innerHTML = "";
   els.liveboardResults.innerHTML = "";
@@ -855,7 +990,7 @@ async function searchLiveboard() {
 
   const params = new URLSearchParams({
     id: stationApiId(station),
-    date: toApiDate(els.routeDate.value),
+    date: toApiDate(dateInputToIso(els.routeDate.value)),
     time: toApiTime(els.liveboardTime.value),
     arrdep: "departure",
     lang: state.locale,
@@ -912,14 +1047,16 @@ function renderLiveboardList(departures, filter) {
     const vehicle = vehicleShortName(dep.vehicle);
     const date = toApiDateFromEpoch(dep.time);
     return `
-      <button class="liveboard-item" type="button" data-train-id="${escapeAttribute(vehicle)}" data-train-date="${escapeAttribute(date)}">
+      <div class="liveboard-item">
         <span class="liveboard-time">
           <span class="text-tabular">${formatEpochTime(dep.time)}</span>
-          ${delayLabel(dep.delay, dep.canceled)}
+          ${delayLabel(dep.delay, dep.canceled, dep.departureConnection)}
         </span>
-        <span><strong>${escapeHtml(dep.station || "")}</strong> <span class="small">${escapeHtml(vehicle)}</span></span>
+        <button class="liveboard-train-details" type="button" data-train-id="${escapeAttribute(vehicle)}" data-train-date="${escapeAttribute(date)}">
+          <strong>${escapeHtml(dep.station || "")}</strong> <span class="small">${escapeHtml(vehicle)}</span>
+        </button>
         <span class="badge">${escapeHtml(platformName(dep.platform))}</span>
-      </button>
+      </div>
     `;
   }).join("");
 
@@ -929,9 +1066,13 @@ function renderLiveboardList(departures, filter) {
 }
 
 async function searchTrain() {
+  els.trainForm.querySelectorAll("[data-date-time]").forEach(validateDateTimeInput);
+  if (!els.trainForm.reportValidity()) {
+    return;
+  }
   const id = normalizeVehicleId(els.trainId.value);
   const apiId = vehicleApiId(id);
-  const date = toApiDate(els.trainDate.value);
+  const date = toApiDate(dateInputToIso(els.trainDate.value));
   els.trainAlert.innerHTML = "";
   els.trainResults.innerHTML = "";
 
@@ -942,7 +1083,7 @@ async function searchTrain() {
 
   els.trainId.value = id;
   setLoading(els.trainResults);
-  updateUrl({ view: "train", train: id, date: els.trainDate.value });
+  updateUrl({ view: "train", train: id, date: dateInputToIso(els.trainDate.value) });
 
   const params = new URLSearchParams({
     id: apiId,
@@ -1018,7 +1159,7 @@ function trainStopRow(stop, nextStop) {
     <div class="train-row">
       <span>${isTrainHere ? `<img src="./assets/train.svg" alt="Current train position" height="16" width="16">` : ""}</span>
       <span class="text-tabular">${formatEpochTime(stop.time || stop.scheduledDepartureTime)}</span>
-      <span>${delayLabel(stop.delay || stop.departureDelay, stop.canceled || stop.departureCanceled)}</span>
+      <span>${delayLabel(stop.delay || stop.departureDelay, stop.canceled || stop.departureCanceled, stop.departureConnection)}</span>
       <span><span class="badge">${escapeHtml(platformName(stop.platform))}</span></span>
       <span>${stationName}</span>
     </div>
@@ -1131,7 +1272,7 @@ function openTrain(vehicle, date) {
   setView("train");
   els.trainId.value = normalizeVehicleId(vehicle);
   if (date) {
-    els.trainDate.value = apiDateToInputDate(date);
+    setDateInputValue(els.trainDate, apiDateToInputDate(date));
   }
   searchTrain();
 }
@@ -1184,7 +1325,10 @@ function vehicleApiId(value) {
   return short ? `BE.NMBS.${short}` : "";
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, ld = false) {
+  let mimeType = 'application/json';
+  if (ld)
+    mimeType = 'application/ld+json';
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
   });
@@ -1258,7 +1402,7 @@ function searchFromLastVisibleDeparture() {
 
 function setRouteDateTimeFromEpoch(seconds) {
   const date = new Date(Number(seconds) * 1000);
-  els.routeDate.value = toDateInputValue(date);
+  setDateInputValue(els.routeDate, toDateInputValue(date));
   els.routeTime.value = toTimeInputValue(date);
 }
 
@@ -1290,8 +1434,8 @@ async function restoreFromUrl() {
     els.routeTo.value = stationDisplayName(to);
   }
   if (params.get("date")) {
-    els.routeDate.value = params.get("date");
-    els.trainDate.value = params.get("date");
+    setDateInputValue(els.routeDate, params.get("date"));
+    setDateInputValue(els.trainDate, params.get("date"));
   }
   if (params.get("time")) {
     els.routeTime.value = params.get("time");
@@ -1386,7 +1530,7 @@ function applyRecentRoute(route) {
   state.routeTo = to;
   refreshStationInputs();
   const now = new Date();
-  els.routeDate.value = toDateInputValue(now);
+  setDateInputValue(els.routeDate, toDateInputValue(now));
   els.routeTime.value = toTimeInputValue(now);
   els.routeForm.querySelector("[value='departure']").checked = true;
   setView("route");
@@ -1464,9 +1608,10 @@ function formatEpochTime(seconds) {
   if (!seconds) {
     return "";
   }
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(`${state.locale}-BE`, {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZone: BELGIUM_TIME_ZONE,
   }).format(new Date(Number(seconds) * 1000));
 }
@@ -1483,12 +1628,189 @@ function formatTransferDuration(seconds) {
   return `${minutes} ${t("mins")}`;
 }
 
-function delayLabel(delay, canceled) {
+function delayLabel(delay, canceled, connectionId = "") {
   if (Number(canceled || 0) > 0) {
     return `<span class="delay">${escapeHtml(t("canceled"))}</span>`;
   }
   const minutes = Math.round(Number(delay || 0) / 60);
-  return minutes > 0 ? `<span class="delay">+${minutes}'</span>` : "";
+  if (minutes <= 0) {
+    return "";
+  }
+
+  const historyButton = connectionId ? `
+    <button class="delay-info-button" type="button"
+      data-delay-history="${escapeAttribute(connectionId)}"
+      aria-expanded="false"
+      aria-label="${escapeAttribute(t("delayHistory"))}"
+      title="${escapeAttribute(t("delayHistory"))}">i</button>
+    <span class="delay-history-panel" hidden></span>
+  ` : "";
+
+  return `<span class="delay-announcement"><span class="delay">+${minutes}'</span>${historyButton}</span>`;
+}
+
+function bindDelayHistory() {
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-delay-history]");
+    if (button) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleDelayHistory(button);
+      return;
+    }
+
+    if (!event.target.closest(".delay-history-panel")) {
+      closeDelayHistoryPanels();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      closeDelayHistoryPanels(true);
+    }
+  });
+}
+
+async function toggleDelayHistory(button) {
+  const panel = button.parentElement.querySelector(".delay-history-panel");
+  const isOpen = button.getAttribute("aria-expanded") === "true";
+  closeDelayHistoryPanels();
+  if (isOpen || !panel) {
+    return;
+  }
+
+  button.setAttribute("aria-expanded", "true");
+  panel.hidden = false;
+  panel.innerHTML = `<span class="delay-history-message">${escapeHtml(t("delayHistoryLoading"))}</span>`;
+
+  try {
+    const members = await fetchDelayFeedMembers();
+    if (!button.isConnected || button.getAttribute("aria-expanded") !== "true") {
+      return;
+    }
+    const history = delayHistoryForConnection(members, button.dataset.delayHistory);
+    panel.innerHTML = history.length
+      ? renderDelaySparkline(history)
+      : `<span class="delay-history-message">${escapeHtml(t("delayHistoryUnavailable"))}</span>`;
+  } catch {
+    if (button.isConnected && button.getAttribute("aria-expanded") === "true") {
+      panel.innerHTML = `<span class="delay-history-message">${escapeHtml(t("delayHistoryFailed"))}</span>`;
+    }
+  }
+}
+
+function closeDelayHistoryPanels(restoreFocus = false) {
+  document.querySelectorAll("[data-delay-history][aria-expanded='true']").forEach(button => {
+    button.setAttribute("aria-expanded", "false");
+    const panel = button.parentElement.querySelector(".delay-history-panel");
+    if (panel) {
+      panel.hidden = true;
+    }
+    if (restoreFocus) {
+      button.focus();
+    }
+  });
+}
+
+async function fetchDelayFeedMembers() {
+  const now = Date.now();
+  if (state.delayFeed && now - state.delayFeedFetchedAt < DELAY_FEED_CACHE_MS) {
+    return state.delayFeed;
+  }
+  if (state.delayFeedPromise) {
+    return state.delayFeedPromise;
+  }
+
+  state.delayFeedPromise = fetchJson(DELAY_FEED_URL, true)
+    .then(data => {
+      const members = asArray(data["tree:member"]);
+      state.delayFeed = members;
+      state.delayFeedFetchedAt = Date.now();
+      return members;
+    })
+    .finally(() => {
+      state.delayFeedPromise = null;
+    });
+  return state.delayFeedPromise;
+}
+
+function delayHistoryForConnection(members, connectionId) {
+  const canonicalId = String(connectionId || "").split("?")[0];
+  const observations = members
+    .filter(member => {
+      const versionOf = typeof member.isVersionOf === "string"
+        ? member.isVersionOf
+        : member.isVersionOf && member.isVersionOf["@id"];
+      return String(versionOf || "").split("?")[0] === canonicalId;
+    })
+    .map(member => ({
+      time: new Date(member.modified).getTime(),
+      delay: Number(member.departureDelay),
+    }))
+    .filter(point => Number.isFinite(point.time) && Number.isFinite(point.delay))
+    .sort((a, b) => a.time - b.time);
+
+  return [...new Map(observations.map(point => [point.time, point])).values()];
+}
+
+function renderDelaySparkline(history) {
+  const width = 220;
+  const height = 64;
+  const padding = 7;
+  const firstTime = history[0].time;
+  const lastTime = history[history.length - 1].time;
+  const timeRange = Math.max(1, lastTime - firstTime);
+  const minDelay = Math.min(...history.map(point => point.delay));
+  const maxDelay = Math.max(...history.map(point => point.delay));
+  const delayRange = maxDelay - minDelay;
+  const coordinates = history.map(point => {
+    const x = history.length === 1
+      ? width / 2
+      : padding + ((point.time - firstTime) / timeRange) * (width - padding * 2);
+    const y = delayRange === 0
+      ? height / 2
+      : height - padding - ((point.delay - minDelay) / delayRange) * (height - padding * 2);
+    return { x, y };
+  });
+  const firstMinutes = Math.round(history[0].delay / 60);
+  const lastMinutes = Math.round(history[history.length - 1].delay / 60);
+  const difference = lastMinutes - firstMinutes;
+  const trendKey = difference > 0 ? "delayTrendUp" : difference < 0 ? "delayTrendDown" : "delayTrendStable";
+  const trend = formatTranslation(trendKey, { minutes: Math.abs(difference) });
+  const summary = formatTranslation("delayHistorySummary", {
+    trend,
+    start: firstMinutes,
+    end: lastMinutes,
+  });
+  const line = coordinates.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  const trendClass = difference > 0 ? "is-up" : difference < 0 ? "is-down" : "is-stable";
+
+  return `
+    <span class="delay-history-heading">
+      <strong>${escapeHtml(t("delayHistory"))}</strong>
+      <span class="delay-trend ${trendClass}">${escapeHtml(trend)}</span>
+    </span>
+    <svg class="delay-sparkline" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAttribute(summary)}">
+      <line x1="${padding}" y1="${height / 2}" x2="${width - padding}" y2="${height / 2}" class="delay-sparkline-baseline"></line>
+      ${history.length > 1 ? `<polyline points="${line}" class="delay-sparkline-line"></polyline>` : ""}
+      ${coordinates.map(point => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.5" class="delay-sparkline-point"></circle>`).join("")}
+    </svg>
+    <span class="delay-history-axis">
+      <span>${escapeHtml(formatObservationTime(firstTime))}</span>
+      <span>+${lastMinutes}'</span>
+      <span>${escapeHtml(formatObservationTime(lastTime))}</span>
+    </span>
+    <span class="sr-only">${escapeHtml(summary)}</span>
+  `;
+}
+
+function formatObservationTime(milliseconds) {
+  return new Intl.DateTimeFormat(`${state.locale}-BE`, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: BELGIUM_TIME_ZONE,
+  }).format(new Date(milliseconds));
 }
 
 function platformName(platform) {

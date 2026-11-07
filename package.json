@@ -2,6 +2,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "build:stations": "node scripts/build-stations.mjs"
   }
 }
