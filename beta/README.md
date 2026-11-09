@@ -25,6 +25,8 @@ still lives separately in the root of this repository.
 Dates use **DD/MM/YYYY** and times use the **24-hour clock in Europe/Brussels**,
 even when your device is in another timezone. The interface is available in
 English, Dutch, French and German.
+Train headsigns also follow the selected language when a translation is
+available; otherwise the timetable's published text is shown.
 
 ## How it works
 

@@ -9,6 +9,7 @@ import "./styles.css";
 const DATA_URL = "https://irail.github.io/iRail-cdn/manifest.jsonld";
 const $ = id => document.getElementById(id);
 const autocompleteClosers = [];
+const autocompleteLanguageUpdates = [];
 const escape = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const attr = value => escape(JSON.stringify(value));
 const storage = {
@@ -200,6 +201,7 @@ function autocomplete({ id, search, choose, emptyKey = "noMatches", loadingKey =
   });
   input.addEventListener("blur", close);
   autocompleteClosers.push(close);
+  autocompleteLanguageUpdates.push(() => { if (document.activeElement === input) refresh(); else close(); });
   return { close, refresh };
 }
 function stationPicker(id) {
@@ -217,7 +219,7 @@ function trainPicker() {
       const date = dateInputToIso($("train-date").value);
       if (!date) throw new Error(t("invalidTime"));
       state.trainSearch ??= new PlannerClient(new Worker(new URL("./train-search-worker.js", import.meta.url), { type: "module" }));
-      return state.trainSearch.request("trains", { dataUrl: DATA_URL, date, query, realtimeVersion: state.feed?.timestamp ?? 0 });
+      return state.trainSearch.request("trains", { dataUrl: DATA_URL, date, query, language: state.language, realtimeVersion: state.feed?.timestamp ?? 0 });
     },
     choose: train => { state.selections["train-id"] = train; searchTrain(); },
   });
@@ -263,8 +265,9 @@ function timeline(journey) {
     if (leg.kind === "walk") return `<div class="planner-switch">${escape(t("walk"))} · ${Math.round(leg.distanceMeters)} m · ${duration(leg.alightTime - leg.boardTime)}</div>`;
     const date = serviceDayInstant(leg.serviceDate) ?? new Date(leg.boardTime * 1000);
     const highlight = { from: stationAt(leg.boardStop).id, to: stationAt(leg.alightStop).id };
+    const headsign = leg.headsigns?.[state.language] || leg.headsigns?.fr || leg.headsign;
     return `${stopRow(leg, "board")}
-      <div class="planner-train">${trainButton(leg.vehicle, date, highlight)} ${leg.headsign ? ` → ${escape(leg.headsign)}` : ""} ${canceled(leg.canceled)}</div>
+      <div class="planner-train">${trainButton(leg.vehicle, date, highlight)} ${headsign ? ` → ${escape(headsign)}` : ""} ${canceled(leg.canceled)}</div>
       ${stopRow(leg, "alight")}
       ${next?.kind === "ride" ? `<div class="planner-switch">${duration(next.boardTime - leg.alightTime)} · ${escape(t("transfer"))}</div>` : ""}`;
   }).join("");
@@ -318,7 +321,7 @@ async function searchRoute({ historyMode = "push" } = {}) {
     state.route = run;
     $("route-results").innerHTML = loading("searching");
     updateUrl(historyMode);
-    const result = await state.planner.request("plan", run.query);
+    const result = await state.planner.request("plan", { ...run.query, language: state.language });
     if (state.route !== run) return;
     run.result = result; renderRoutes(run); rememberRoute(from, to);
   } catch (error) {
@@ -484,7 +487,7 @@ async function refreshViews() {
     const route = state.route, board = state.board, train = state.train;
     const jobs = [];
     if (route?.result) jobs.push((async () => {
-      const result = await state.planner.request("plan", route.query);
+      const result = await state.planner.request("plan", { ...route.query, language: state.language });
       if (state.route === route) { route.result = result; $("route-alert").innerHTML = ""; renderRoutes(route); }
     })().catch(() => { if (state.route === route) $("route-alert").innerHTML = alertHtml(t("refreshFailed")); }));
     if (board?.result) jobs.push((async () => {
@@ -573,6 +576,7 @@ async function loadStations() {
 }
 $("language-select").addEventListener("change", async event => {
   state.language = event.target.value; storage.write("irail-beta-language", state.language); translate();
+  autocompleteLanguageUpdates.forEach(update => update());
   if (!state.source) return;
   try { await loadStations(); if (state.route?.result) renderRoutes(state.route); await refreshViews(); updateUrl("replace"); }
   catch (error) { showError($("planner-status"), error); $("planner-status").hidden = false; }

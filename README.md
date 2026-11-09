@@ -33,7 +33,7 @@ local files. The `dist/` build output is ignored by Git.
 
 ## Planner beta
 
-`/beta/` is a self-contained replacement frontend using **@irail/planner 0.1.2
+`/beta/` is a self-contained replacement frontend using **@irail/planner 0.1.3
 from npm** in Web Workers. Journey planning, station search, departures/arrivals
 and daily train runs use the library and the iRail CDN's Linked Connections
 timetable and NMBS/SNCB GTFS Realtime feed. The beta makes no iRail API requests.
@@ -60,7 +60,9 @@ The route remains available in its tab. Train autocomplete matches compact
 numbers such as `P8008`, displays each train's headsign, and scans actual
 service-day connections through the planner's public core. It excludes trains
 from other service days and trains canceled by the available real-time feed.
-Station autocomplete uses the package's multilingual fuzzy search.
+Station autocomplete uses the package's multilingual fuzzy search. Journey and
+train-search headsigns follow the chosen language using the CDN's translations,
+falling back to the published headsign when a translation is unavailable.
 Selecting a station or train loads its overview immediately. Changes to the
 selected station's time/date/board or the selected train's date reload the view.
 The route planner uses the same departure/arrival toggle as the existing site.

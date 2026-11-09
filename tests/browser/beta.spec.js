@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 const fixture = resolve("tests/fixtures/beta");
 const routeUrl = "?from=BE.NMBS.008892007&to=BE.NMBS.008841004&date=2026-11-08&time=09:00&lang=en";
 
-async function timetable(context, { failedFeed = false, scheduleOnly = false } = {}) {
+async function timetable(context, { failedFeed = false, scheduleOnly = false, headsigns = true } = {}) {
   const network = { updated: false, failedFeed, requests: [] };
   await context.route("https://irail.github.io/iRail-cdn/**", async route => {
     const url = new URL(route.request().url());
@@ -17,6 +17,7 @@ async function timetable(context, { failedFeed = false, scheduleOnly = false } =
     try {
       let body = await readFile(resolve(fixture, file));
       if (scheduleOnly && name === "manifest.jsonld") { const manifest = JSON.parse(body); delete manifest.realtime; body = Buffer.from(JSON.stringify(manifest)); }
+      if (!headsigns && name === "irail.json") { const info = JSON.parse(body); delete info.files.headsigns; body = Buffer.from(JSON.stringify(info)); }
       await route.fulfill({ body, contentType: name.endsWith("jsonld") || name.endsWith("json") ? "application/json" : "application/octet-stream", headers: { "Access-Control-Allow-Origin": "*" } });
     } catch { await route.fulfill({ status: 404, body: "Missing fixture" }); }
   });
@@ -214,6 +215,43 @@ test("arrival-time journeys meet the selected deadline and restore from the URL"
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.locator(".result-card").first()).toContainText("11:20");
   await expect(page).toHaveURL(/timesel=departure/);
+});
+
+test("journey and autocomplete headsigns follow the chosen language", async ({ page, context }) => {
+  await timetable(context);
+  await page.goto(`/beta/${routeUrl}`);
+  await expect(page.locator(".result-card")).toHaveCount(5);
+  const direction = page.locator("#route-results .planner-train").first();
+  for (const [language, headsign] of [["en", "Destination"], ["nl", "Bestemming"], ["fr", "Destination"], ["de", "Zielbahnhof"], ["en", "Destination"]]) {
+    await page.locator("#language-select").selectOption(language);
+    await expect(direction).toContainText(headsign);
+    await expect(page.locator(".result-card").first()).toHaveClass(/is-open/);
+  }
+  await nav(page, "Train").click();
+  await page.locator("#train-date").fill("08/11/2026");
+  await page.locator("#train-id").fill("P800");
+  const menu = page.locator("#train-id-menu");
+  for (const [language, headsign] of [["en", "Liège-Guillemins"], ["nl", "Luik-Guillemins"], ["de", "Lüttich-Guillemins"], ["fr", "Liège-Guillemins"]]) {
+    await page.locator("#language-select").selectOption(language);
+    await page.locator("#train-id").focus();
+    await expect(menu.getByRole("option")).toHaveCount(1);
+    await expect(menu.getByRole("option")).toContainText(headsign);
+  }
+  // The destination can be searched in Dutch while its display is French.
+  await page.locator("#train-id").fill("Luik");
+  await expect(menu.getByRole("option")).toContainText("Liège-Guillemins");
+});
+
+test("missing headsign translations retain the published destination", async ({ page, context }) => {
+  const network = await timetable(context, { headsigns: false });
+  await page.goto(`/beta/${routeUrl.replace("lang=en", "lang=nl")}`);
+  await expect(page.locator(".result-card")).toHaveCount(5);
+  await expect(page.locator("#route-results .planner-train").first()).toContainText("Destination");
+  await nav(page, "Trein").click();
+  await page.locator("#train-date").fill("08/11/2026");
+  await page.locator("#train-id").fill("P800");
+  await expect(page.locator("#train-id-menu").getByRole("option")).toContainText("Liège-Guillemins");
+  expect(network.requests).not.toContain("headsigns.arrow");
 });
 
 test("built assets and workers work after moving the beta directory", async ({ page, context }) => {

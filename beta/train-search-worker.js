@@ -8,7 +8,7 @@ const planner = createPlanner({ tableFromIPC, RecordBatchReader });
 let sources, dayIndex, queue = Promise.resolve();
 const normalize = value => String(value).normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, "").toUpperCase();
 
-async function search({ dataUrl, date, query, realtimeVersion, limit = 8 }) {
+async function search({ dataUrl, date, query, language = "en", realtimeVersion, limit = 8 }) {
   const midnight = belgianInstant(date, "00:00");
   if (!midnight) throw new Error("Choose a valid date first.");
   if (!sources) {
@@ -20,6 +20,7 @@ async function search({ dataUrl, date, query, realtimeVersion, limit = 8 }) {
     await planner.refreshRealtime(sources).catch(() => {});
     const vehicles = new Map(), serviceDate = Number(date.replaceAll("-", ""));
     for (const source of sources) {
+      const headsigns = await planner.headsignDirectory(source);
       const tripsToday = new Set();
       // Include after-midnight continuations of this service day; filter by
       // serviceDate as well so the following day's trains cannot leak in.
@@ -31,7 +32,7 @@ async function search({ dataUrl, date, query, realtimeVersion, limit = 8 }) {
         if (!trip.shortName) continue;
         const type = route.shortName || route.longName || "";
         const id = `BE.NMBS.${type}${trip.shortName}`;
-        const vehicle = { id, name: `${type} ${trip.shortName}`.trim(), headsign: trip.headsign || "" };
+        const vehicle = { id, name: `${type} ${trip.shortName}`.trim(), headsign: trip.headsign || "", headsigns: headsigns.all(trip.headsign || "") };
         vehicles.set(`${id}|${vehicle.headsign}`, vehicle);
       }
     }
@@ -39,7 +40,10 @@ async function search({ dataUrl, date, query, realtimeVersion, limit = 8 }) {
   }
   const wanted = normalize(query);
   const rank = vehicle => normalize(vehicle.name) === wanted ? 0 : normalize(vehicle.name).startsWith(wanted) ? 1 : 2;
-  return dayIndex.vehicles.filter(vehicle => normalize(vehicle.name).includes(wanted) || normalize(vehicle.headsign).includes(wanted))
+  // Keep one service-day index across language switches, translating only its
+  // suggestions. Searches can still match a destination in any language.
+  return dayIndex.vehicles.filter(vehicle => normalize(vehicle.name).includes(wanted) || Object.values(vehicle.headsigns).some(headsign => normalize(headsign).includes(wanted)))
+    .map(vehicle => ({ ...vehicle, headsign: vehicle.headsigns[language] || vehicle.headsign }))
     .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, undefined, { numeric: true }) || a.headsign.localeCompare(b.headsign)).slice(0, limit);
 }
 

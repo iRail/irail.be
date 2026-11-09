@@ -11,7 +11,7 @@
     "preview:beta": "vite preview --config vite.beta.config.js --host 127.0.0.1"
   },
   "devDependencies": {
-    "@irail/planner": "0.1.2",
+    "@irail/planner": "0.1.3",
     "@playwright/test": "^1.65.0",
     "apache-arrow": "^21.2.0",
     "vite": "^8.3.5"
