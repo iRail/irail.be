@@ -116,6 +116,9 @@ in the deployed app.
 Checks cover station and train selection, autocomplete, departure/arrival
 searches, mobile layout, real-time refreshes, browser history, installability,
 and moving the built app to another hosting path.
+Mobile screenshots support visual review. Layout assertions check page overflow;
+exact font measurements and pixel alignment are left to visual review because
+they vary across browsers and operating systems.
 
 ## Build and deployment
 
