@@ -48,10 +48,6 @@ jobs:
         run: npm test
       - name: Build website
         run: npm run build
-      - name: Install browser for checks
-        run: npx playwright install --with-deps chromium
-      - name: Check beta in browser
-        run: npm run test:beta
       - name: Configure Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5

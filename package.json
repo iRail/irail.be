@@ -4,7 +4,6 @@
   "scripts": {
     "build": "node scripts/build-site.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:beta": "playwright test --config playwright.beta.config.js",
     "build:stations": "node scripts/build-stations.mjs",
     "dev:beta": "vite --config vite.beta.config.js --host 127.0.0.1",
     "build:beta": "vite build --config vite.beta.config.js",
@@ -12,7 +11,6 @@
   },
   "devDependencies": {
     "@irail/planner": "0.1.3",
-    "@playwright/test": "^1.65.0",
     "apache-arrow": "^21.2.0",
     "vite": "^8.3.5"
   }

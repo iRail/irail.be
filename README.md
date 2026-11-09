@@ -6,7 +6,7 @@ This repository contains the GitHub Pages frontend for iRail.be.
 
 GitHub Actions builds and publishes the site with `.github/workflows/pages.yml`.
 Pushes to `main`, manual runs and the daily schedule build fresh station data,
-run unit/browser checks, and deploy the `dist/` artifact to GitHub Pages. Pull
+run unit tests, and deploy the `dist/` artifact to GitHub Pages. Pull
 requests run the same build and checks without publishing. The workflow does
 not commit generated files.
 
@@ -19,8 +19,6 @@ npm ci
 npm run build:stations -- --source path/to/irail-stations
 npm run build
 npm test
-npx playwright install chromium
-npm run test:beta
 ```
 
 The station source must contain `stations.jsonld` and `facilities.csv`; generate
@@ -83,14 +81,11 @@ The manifest includes a stable relative app ID, start URL and scope, 192/512 px
 PNG icons, an Android maskable icon, and route/station/train shortcuts. iPhone
 home-screen metadata includes a 180 px Apple touch icon. These relative URLs
 also work when the build is relocated. Icons are derived from the existing iRail
-vector logo; to regenerate them after editing the logo, install Playwright's
-Chromium and run `node scripts/build-beta-icons.mjs`. PNG assets are included
-in the source; deployment does not require generating them again.
+vector logo. PNG assets are included in the source; deployment does not require
+generating them again.
 
-Browser checks use the invented timetable and real-time snapshots in
-`tests/fixtures/beta/`. They cover tab navigation, contextual times, arrival
-deadlines, daily train suggestions, delays, automatic updates, mobile layout,
-browser history, install metadata/icons, and relocating the built folder.
+Browser interactions and visual layout are checked manually using
+`npm run dev:beta` or a production preview with `npm run preview:beta`.
 
 To promote the beta later, deploy the **contents** of `dist/beta/` at the domain
 root. Assets, workers, the web manifest, home links and URL state are relative;

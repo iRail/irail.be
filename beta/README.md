@@ -103,22 +103,12 @@ The build needs no neighboring planner checkout.
 ```sh
 npm test
 npm run build
-npx playwright install chromium
-npm run test:beta
 ```
 
-The browser suite runs against the complete `dist/` build. It uses an
-[invented timetable and real-time snapshots](../tests/fixtures/beta/README.md)
-to make checks reproducible, including delays, cancellations and trains that
-run on different days. These fixtures are only for tests and are not included
-in the deployed app.
-
-Checks cover station and train selection, autocomplete, departure/arrival
-searches, mobile layout, real-time refreshes, browser history, installability,
-and moving the built app to another hosting path.
-Mobile screenshots support visual review. Layout assertions check page overflow;
-exact font measurements and pixel alignment are left to visual review because
-they vary across browsers and operating systems.
+Unit tests cover date and time handling. Browser interactions and visual layout
+are checked manually using `npm run dev:beta` or a production preview with
+`npm run preview:beta`. Check journey searches, autocomplete, station and train
+navigation, Back/Forward, and mobile layouts in the browser.
 
 ## Build and deployment
 
@@ -146,12 +136,8 @@ named **iRail beta** and opens in a standalone window.
 
 [`site.webmanifest`](public/site.webmanifest) includes regular and maskable
 icons, a relative app identity and scope, and shortcuts to the three views.
-The iPhone home-screen icon is supplied separately in the HTML. To regenerate
-icons from the existing vector logo after installing Playwright's Chromium:
-
-```sh
-node scripts/build-beta-icons.mjs
-```
+The iPhone home-screen icon is supplied separately in the HTML. The icons are
+derived from the existing vector logo and are included in the source.
 
 Installation does not provide an offline timetable. The app has no service
 worker and needs a connection to download timetable data from its publisher. Train
