@@ -75,7 +75,9 @@ th, td { padding: .65rem .55rem; border-bottom: 1px solid var(--line-soft); vert
 .stops-table .on-journey td:first-child { box-shadow: inset 3px 0 #8aa9c8; }
 .journey-tag { display: inline-block; padding: .15rem .4rem; border-radius: 4px; background: var(--link-hover); color: #3d5874; }
 .train-panel, .liveboard-panel { padding: 1rem; margin-top: 1rem; }
-.board-table .train-link-button { display: block; }
+.board-service { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: .65rem; row-gap: .15rem; }
+.board-service .train-link-button { min-width: 4.5rem; padding: 0; text-align: left; font-weight: 650; white-space: nowrap; }
+.board-direction { flex: 1 1 8rem; min-width: 0; font-weight: 400; overflow-wrap: anywhere; }
 .panel-note { margin: 0 0 .8rem; font-size: .85rem; color: var(--muted); }
 .loading-inline { padding: 1.5rem; color: var(--muted); }
 .loading-inline::before { content: ""; display: inline-block; width: .8rem; height: .8rem; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; margin-right: .6rem; animation: spin 1s linear infinite; }

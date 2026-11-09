@@ -338,9 +338,9 @@ function boardMarkup(result, query) {
       <button type="button" class="secondary-button${query.type === "departure" ? " is-active" : ""}" data-board-type="departure" aria-pressed="${query.type === "departure"}">${escape(t("departures"))}</button>
       <button type="button" class="secondary-button${query.type === "arrival" ? " is-active" : ""}" data-board-type="arrival" aria-pressed="${query.type === "arrival"}">${escape(t("arrivals"))}</button>
     </div>
-    ${result.entries.length ? `<div class="table-scroll"><table class="board-table"><thead><tr><th scope="col">${escape(t("time"))}</th><th scope="col">${escape(t(query.type === "departure" ? "direction" : "origin"))} / ${escape(t("train"))}</th><th scope="col">${escape(t("platform"))}</th></tr></thead><tbody>${result.entries.map(entry => {
+    ${result.entries.length ? `<div class="table-scroll"><table class="board-table"><thead><tr><th scope="col">${escape(t("time"))}</th><th scope="col">${escape(t("train"))} / ${escape(t(query.type === "departure" ? "direction" : "origin"))}</th><th scope="col">${escape(t("platform"))}</th></tr></thead><tbody>${result.entries.map(entry => {
       const other = entry.destination ?? entry.origin;
-      return `<tr><td>${timeHtml(entry.time, entry.delay, query.time)} ${canceled(entry.canceled)}</td><td><strong>${escape(other.name)}</strong>${trainButton(entry.vehicle, entry.time)}</td><td>${platform(entry.platform)}</td></tr>`;
+      return `<tr><td>${timeHtml(entry.time, entry.delay, query.time)} ${canceled(entry.canceled)}</td><td><div class="board-service">${trainButton(entry.vehicle, entry.time)}<span class="board-direction">${escape(other.name)}</span></div></td><td>${platform(entry.platform)}</td></tr>`;
     }).join("")}</tbody></table></div>` : alertHtml(t("noEntries"))}
   </section>`;
 }
