@@ -291,9 +291,9 @@ function renderRoutes(run, openKeys) {
       const dateNote = departureDate !== arrivalDate ? `${departureDate} → ${arrivalDate}` : departureDate !== day(routeInstant(run)) ? departureDate : "";
       return `<article class="result-card${open ? " is-open" : ""}${journey.canceled ? " is-canceled" : ""}" data-key="${escape(key)}">
         <button class="connection-summary" type="button" data-toggle-panel aria-expanded="${open}">
-          <span><span class="connection-times">${timeHtml((journey.departure - boardDelay) * 1000, boardDelay)}<span aria-hidden="true">→</span>${timeHtml((journey.arrival - alightDelay) * 1000, alightDelay)}</span>
+          <span class="connection-info"><span class="connection-times"><span class="connection-time">${timeHtml((journey.departure - boardDelay) * 1000, boardDelay)}</span><span aria-hidden="true">→</span><span class="connection-time">${timeHtml((journey.arrival - alightDelay) * 1000, alightDelay)}</span></span>
             <span class="connection-meta"><span>${duration(journey.arrival - journey.departure)}</span><span>${journey.transfers ? `${journey.transfers} ${escape(t(journey.transfers === 1 ? "transfer" : "transfers"))}` : escape(t("direct"))}</span>${dateNote ? `<span>${dateNote}</span>` : ""}${canceled(journey.canceled)}</span></span>
-          <span class="summary-right">${platform(first?.boardPlatform)}<span class="summary-chevron" aria-hidden="true">⌄</span></span>
+          <span class="summary-right">${platform(first?.boardPlatform)}<svg class="summary-chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </button><div class="connection-body"><div class="timeline">${timeline(journey)}</div></div>
       </article>`;
     }).join("")}</div><aside class="result-actions"><button type="button" class="secondary-button" data-route-shift="earlier">${escape(t("earlier"))}</button><button type="button" class="secondary-button" data-route-shift="later">${escape(t("later"))}</button></aside></div>`;
