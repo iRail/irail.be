@@ -1,0 +1,24 @@
+{
+  "id": "./",
+  "name": "iRail beta routeplanner",
+  "short_name": "iRail beta",
+  "description": "Belgian train journeys, live departures and arrivals, and daily train overviews.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#c72929",
+  "categories": ["travel", "navigation"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "./assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Plan a journey", "url": "./?view=route" },
+    { "name": "Station departures and arrivals", "short_name": "Station", "url": "./?view=station" },
+    { "name": "Train overview", "short_name": "Train", "url": "./?view=train" }
+  ]
+}

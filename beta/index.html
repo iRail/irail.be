@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#C72929">
+  <meta name="application-name" content="iRail beta">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="iRail beta">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Plan Belgian train journeys with iRail. Live delays, train stops, and station departures and arrivals.">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="manifest" href="./site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
+  <title>iRail routeplanner · beta</title>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="iRail home">
+      <img class="brand-logo" src="./assets/logo.svg" alt=""><span>iRail</span><span class="beta-label">beta</span>
+    </a>
+    <nav class="view-nav" aria-label="App sections">
+      <button class="nav-link-button is-active" type="button" data-view="route" data-i18n="navRoute" aria-current="page">Plan route</button>
+      <button class="nav-link-button" type="button" data-view="station" data-i18n="station">Station</button>
+      <button class="nav-link-button" type="button" data-view="train" data-i18n="train">Train</button>
+    </nav>
+    <label class="language-picker">
+      <span class="sr-only" data-i18n="language">Language</span>
+      <select id="language-select" aria-label="Language">
+        <option value="en">English</option><option value="nl">Nederlands</option>
+        <option value="fr">Français</option><option value="de">Deutsch</option>
+      </select>
+    </label>
+  </header>
+
+  <div id="live-status" class="live-status" data-status="loading">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span id="live-text" role="status" aria-live="polite">Loading the timetable and real-time feed…</span>
+    <div class="live-controls">
+      <label><input type="checkbox" id="live-toggle" checked> <span data-i18n="automatic">Update automatically</span></label>
+      <button id="live-now" type="button" disabled data-i18n="checkNow">Check now</button>
+    </div>
+  </div>
+
+  <main class="app-shell">
+    <div id="planner-status" class="alert alert-info" role="status" data-i18n="loading">Loading the timetable…</div>
+    <section id="route-view" class="app-view" aria-label="Plan route">
+      <form id="route-form" class="search-panel" autocomplete="off">
+        <div class="station-grid">
+          <div class="field autocomplete-field">
+            <label for="route-from" data-i18n="from">From</label>
+            <input id="route-from" placeholder="Type departure station" data-placeholder="fromPlaceholder" role="combobox" aria-autocomplete="list" aria-controls="route-from-menu" aria-expanded="false" autocorrect="off" autocapitalize="off" spellcheck="false" required disabled>
+            <div id="route-from-menu" class="autocomplete-menu" role="listbox"></div>
+          </div>
+          <button id="route-swap" class="swap-button" type="button" aria-label="Reverse route" title="Reverse route"><span aria-hidden="true">⇄</span></button>
+          <div class="field autocomplete-field">
+            <label for="route-to" data-i18n="to">To</label>
+            <input id="route-to" placeholder="Type destination station" data-placeholder="toPlaceholder" role="combobox" aria-autocomplete="list" aria-controls="route-to-menu" aria-expanded="false" autocorrect="off" autocapitalize="off" spellcheck="false" required disabled>
+            <div id="route-to-menu" class="autocomplete-menu" role="listbox"></div>
+          </div>
+        </div>
+        <div class="time-grid">
+          <div id="route-timesel" class="segmented" role="radiogroup" aria-label="Departure or arrival time">
+            <label><input type="radio" name="route-timesel" value="departure" checked><span data-i18n="departure">Departure</span></label>
+            <label><input type="radio" name="route-timesel" value="arrival"><span data-i18n="arrival">Arrival</span></label>
+          </div>
+          <div class="field compact-field"><label for="route-time" data-i18n="time">Time</label><input id="route-time" type="text" data-date-time="time" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" required></div>
+          <div class="field compact-field"><label for="route-date" data-i18n="date">Date</label><input id="route-date" type="text" data-date-time="date" placeholder="DD/MM/YYYY" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" required></div>
+          <button id="route-search" class="primary-button" type="submit" disabled data-i18n="search">Search</button>
+        </div>
+        <p class="form-note" data-i18n="timeNote">All times are Belgian local time. Journeys update as the real-time feed changes.</p>
+      </form>
+      <div id="recent-routes" class="recent-routes"></div>
+      <div id="route-alert" role="status"></div>
+      <div id="route-results" aria-live="polite"></div>
+    </section>
+
+    <section id="station-view" class="app-view" aria-label="Station" hidden>
+      <form id="station-form" class="search-panel" autocomplete="off">
+        <div class="station-grid">
+          <div class="field autocomplete-field">
+            <label for="station-input" data-i18n="station">Station</label>
+            <input id="station-input" placeholder="Type station name" data-placeholder="stationPlaceholder" role="combobox" aria-autocomplete="list" aria-controls="station-input-menu" aria-expanded="false" autocorrect="off" autocapitalize="off" spellcheck="false" required disabled>
+            <div id="station-input-menu" class="autocomplete-menu" role="listbox"></div>
+          </div>
+        </div>
+        <div class="time-grid">
+          <div class="field compact-field"><label for="station-type" data-i18n="board">Board</label><select id="station-type"><option value="departure" data-i18n="departures">Departures</option><option value="arrival" data-i18n="arrivals">Arrivals</option></select></div>
+          <div class="field compact-field"><label for="station-time" data-i18n="time">Time</label><input id="station-time" type="text" data-date-time="time" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" required></div>
+          <div class="field compact-field"><label for="station-date" data-i18n="date">Date</label><input id="station-date" type="text" data-date-time="date" placeholder="DD/MM/YYYY" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" required></div>
+        </div>
+      </form>
+      <div id="station-alert" role="status"></div>
+      <div id="station-results" aria-live="polite"></div>
+    </section>
+
+    <section id="train-view" class="app-view" aria-label="Train" hidden>
+      <form id="train-form" class="search-panel inline-search" autocomplete="off">
+        <div class="field autocomplete-field"><label for="train-id" data-i18n="train">Train</label><input id="train-id" placeholder="P8008" required disabled autocapitalize="characters" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="train-id-menu" aria-expanded="false"><div id="train-id-menu" class="autocomplete-menu" role="listbox"></div></div>
+        <div class="field compact-field"><label for="train-date" data-i18n="date">Date</label><input id="train-date" type="text" data-date-time="date" placeholder="DD/MM/YYYY" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" required></div>
+      </form>
+      <div id="train-alert" role="status"></div>
+      <div id="train-results" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><span data-i18n="buildApp">Build your own app with the</span> <a href="https://github.com/iRail/planner">@irail/planner</a></p>
+    <p>© 2026 Open Knowledge Belgium · <a href="https://github.com/irail/irail.be" data-i18n="contribute">Contribute</a></p>
+  </footer>
+  <noscript><p class="alert alert-info">Enable JavaScript to plan journeys with iRail.</p></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

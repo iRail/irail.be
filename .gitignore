@@ -1,8 +1,13 @@
-# Generated station artifacts. The scheduled GitHub Action force-adds these
-# when publishing updates, but local builds should not pollute git status.
+# Generated station artifacts are rebuilt by the Pages workflow. Local builds
+# should not pollute git status with additional generated files.
 /stations.json
 /stations/NMBS/
 
 # Local checkout used by scripts/build-stations.mjs.
 /.cache/
 /irail-stations/
+
+/node_modules/
+/test-results/
+/playwright-report/
+/dist/
