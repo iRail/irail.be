@@ -38,6 +38,9 @@ from npm** in Web Workers. Journey planning, station search, departures/arrivals
 and daily train runs use the library and the iRail CDN's Linked Connections
 timetable and NMBS/SNCB GTFS Realtime feed. The beta makes no iRail API requests.
 
+See the [beta README](beta/README.md) for an introduction, local setup and a guide
+to the source code.
+
 Edit `beta/` and use `npm run dev:beta` for development, or
 `npm run build:beta` followed by `npm run preview:beta` to preview the production
 beta. Dates always display as **DD/MM/YYYY**, times as **24-hour Belgian local
